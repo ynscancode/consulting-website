@@ -16,7 +16,14 @@ const emptyStateText = emptyStatesEntry?.data.experience ?? 'Coming soon.';
 // ui-ux-designer-20260721T050000Z decision 4: when there is exactly one
 // group (or zero), suppress subheaders entirely — render is pixel-identical
 // to the pre-grouping flat list.
-const groups = groupByCategory(experience, (exp) => exp.data.category);
+// tech-lead-20260729T162747 (run 2): CATEGORY order comes from the one
+// canonical persisted authority — site.json's `ordering` entry — read by
+// entry id, the same keyed-read shape as `emptyStates` above. The entry is
+// absent by default (deliberately not seeded), in which case `?? []` makes
+// grouping fall back to first-appearance order, byte-identically to before.
+const orderingEntry = await getEntry('site', 'ordering');
+const categoryOrder = orderingEntry?.data.categoryOrder?.experience ?? [];
+const groups = groupByCategory(experience, (exp) => exp.data.category, categoryOrder);
 const showSubheads = groups.length > 1;
 ---
 

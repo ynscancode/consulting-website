@@ -14,6 +14,7 @@ import {
   experienceBodySchema,
   blogPostBodySchema,
   emptyStatesBodySchema,
+  categoryOrderBodySchema,
 } from '../../../lib/schemas';
 import { SITE_JSON_PATH, PROJECTS_JSON_PATH, EXPERIENCE_JSON_PATH, BLOG_DIR } from '../../../lib/contentPaths';
 import { buildBlogMarkdown } from '../../../lib/blogMarkdown';
@@ -25,7 +26,15 @@ export const prerender = false;
 // is derived from a slug that's regex-validated (schemas.ts `slugSchema`) to
 // forbid path separators/traversal, then re-checked below before use.
 
-type Area = 'home' | 'about' | 'contact' | 'projects' | 'experience' | 'blog' | 'emptyStates';
+type Area =
+  | 'home'
+  | 'about'
+  | 'contact'
+  | 'projects'
+  | 'experience'
+  | 'blog'
+  | 'emptyStates'
+  | 'categoryOrder';
 const VALID_AREAS: readonly Area[] = [
   'home',
   'about',
@@ -34,6 +43,9 @@ const VALID_AREAS: readonly Area[] = [
   'experience',
   'blog',
   'emptyStates',
+  // Category display order — writes the `ordering` entry of site.json, so it
+  // is handled inside the SITE_JSON_PATH branch below (not a new file).
+  'categoryOrder',
 ];
 
 function isValidArea(value: string): value is Area {
@@ -89,7 +101,13 @@ export const POST: APIRoute = async ({ params, request }) => {
   // — see src/pages/api/draft/ensure.ts for the sole remaining call site.
 
   try {
-    if (area === 'home' || area === 'about' || area === 'contact' || area === 'emptyStates') {
+    if (
+      area === 'home' ||
+      area === 'about' ||
+      area === 'contact' ||
+      area === 'emptyStates' ||
+      area === 'categoryOrder'
+    ) {
       const existing = await getFileOnBranch(token, ref, SITE_JSON_PATH, branch);
       if (!existing) {
         return new Response(JSON.stringify({ error: 'site_json_missing' }), {
@@ -122,10 +140,48 @@ export const POST: APIRoute = async ({ params, request }) => {
         const parsed = contactBodySchema.safeParse(rawBody);
         if (!parsed.success) return badRequest('validation_failed');
         siteData.contact = parsed.data;
-      } else {
+      } else if (area === 'emptyStates') {
         const parsed = emptyStatesBodySchema.safeParse(rawBody);
         if (!parsed.success) return badRequest('validation_failed');
         siteData.emptyStates = parsed.data;
+      } else {
+        // area === 'categoryOrder' (tech-lead-20260729T162747 item 2).
+        // Validated here, server-side, BEFORE any putFileOnBranch (KB-0017) —
+        // the client deriving the list from its live group list is not a
+        // control. No cross-check that a listed category exists in
+        // experience.json/projects.json: forbidden by the contract, resolved
+        // fail-soft at read.
+        const parsed = categoryOrderBodySchema.safeParse(rawBody);
+        if (!parsed.success) return badRequest('validation_failed');
+
+        // KB-0010 base case, written AT the code that assumes prior state:
+        // site.json has NO `ordering` entry today and is never seeded with
+        // one, so "absent" is the working default and must mean exactly "no
+        // persisted order" — never a failed read. Those two are already
+        // unambiguous here (KB-0014): a site.json that cannot be read at all
+        // returned 500 `site_json_missing` above, so reaching this line means
+        // the file WAS read and simply has no ordering yet. A malformed
+        // (non-object) `ordering`/`categoryOrder` written by hand is treated
+        // the same as absent and is replaced, rather than spread into.
+        const existingOrdering = siteData.ordering;
+        const existingCategoryOrder =
+          existingOrdering && typeof existingOrdering === 'object' && !Array.isArray(existingOrdering)
+            ? (existingOrdering as { categoryOrder?: unknown }).categoryOrder
+            : undefined;
+        const prev: Record<string, string[]> =
+          existingCategoryOrder &&
+          typeof existingCategoryOrder === 'object' &&
+          !Array.isArray(existingCategoryOrder)
+            ? (existingCategoryOrder as Record<string, string[]>)
+            : {};
+
+        // Per-`collection` MERGE, not whole-object replace: a projects write
+        // must never clobber the experience order (and vice versa). This is a
+        // deliberate improvement on the wholesale-replace convention the other
+        // site areas use, not a copy of it.
+        siteData.ordering = {
+          categoryOrder: { ...prev, [parsed.data.collection]: parsed.data.order },
+        };
       }
 
       const newContent = JSON.stringify(siteData, null, 2) + '\n';
