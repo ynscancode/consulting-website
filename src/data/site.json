@@ -43,5 +43,13 @@
     "blog": "Stay tuned for more.",
     "contact": "Coming soon.",
     "highlights": "Stay tuned for more."
+  },
+  "ordering": {
+    "categoryOrder": {
+      "experience": [
+        "Work",
+        "Leadership"
+      ]
+    }
   }
 }
