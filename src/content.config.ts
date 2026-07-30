@@ -72,6 +72,21 @@ const site = defineCollection({
         z.string(),
       ])
       .optional(),
+    // "ordering" entry (tech-lead-20260729T162747) — the ONE canonical
+    // category display order per collection. Deliberately NOT a repeat of the
+    // `highlights` collision above: `categoryOrder` is a brand-new flat key,
+    // and its `projects`/`experience` sub-keys are NESTED inside its object,
+    // so they never touch the flat `projects`/`experience` string keys the
+    // "emptyStates" entry uses. Optional at every level, so all four existing
+    // entries validate byte-identically and nothing is stripped. Absent
+    // entirely today (site.json has no `ordering` entry and must NOT be
+    // seeded with one) => no persisted order => first-appearance order.
+    categoryOrder: z
+      .object({
+        projects: z.array(z.string()).optional(),
+        experience: z.array(z.string()).optional(),
+      })
+      .optional(),
   }),
 });
 

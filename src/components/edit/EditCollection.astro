@@ -20,30 +20,78 @@ export type Props = {
   eyebrow: string;
   entries: CollectionEntry[];
   emptyStates: { projects: string; experience: string; blog: string; contact: string };
+  /** Canonical persisted category order for THIS area, from site.json's
+   * `ordering` entry (tech-lead-20260729T162747). Absent entry reads as []. */
+  categoryOrder: string[];
 };
 
-const { area, eyebrow, entries, emptyStates } = Astro.props;
+const { area, eyebrow, entries, emptyStates, categoryOrder } = Astro.props;
 const heading = area === 'projects' ? 'Projects' : 'Experience';
 
-// tech-lead-20260720T160424Z Item 3 / ui-ux-designer-20260721T050000Z —
-// experience-branch-only grouping, computed once here at server render
-// ("load time") from the seed `entries` prop, NOT reactive to later
-// client-side edits (a category contenteditable change re-groups only on
-// the next full page load). The projects branch (area === 'projects')
-// never computes groups and renders the original single flat `.cards`
-// grid below, byte-identical to before this change.
-const isExperience = area === 'experience';
-const groups = isExperience ? groupByCategory(entries, (entry) => entry.category) : [];
-const showSubheads = isExperience && groups.length > 1;
+// tech-lead-20260720T160424Z Item 3 / ui-ux-designer-20260721T050000Z,
+// extended by engineering-director RULING 2 (category-reorder batch,
+// 20260729) to ALSO cover the projects branch of THIS editor (the public
+// /projects page — src/pages/projects.astro — stays a flat, ungrouped list,
+// byte-unchanged). Computed once here at server render ("load time") from
+// the seed `entries` prop plus the canonical persisted `categoryOrder`
+// (site.json `ordering` entry, tech-lead-20260729T162747 — the ONE
+// ordering authority; the entries array orders nothing but the cards
+// WITHIN a group), NOT reactive to later client-side edits (a
+// category contenteditable change re-groups only on the next full page
+// load; a category MOVE re-renders client-side instead — see the inline
+// script below).
+const groups = groupByCategory(entries, (entry) => entry.category, categoryOrder);
+const showSubheads = groups.length > 1;
+// Reorderable (non-pinned) subset, in display order — used to compute each
+// group's Move up/down disabled state (first/last of THIS subset, never the
+// pinned "Other" group, which is never a valid move target or destination —
+// tech-lead-20260728T224258Z contract 7 invariant).
+const reorderableGroups = groups.filter((group) => !group.isPinned);
 ---
 
 <Band variant="paper" eyebrow={eyebrow} as="div">
   <h1>{heading}</h1>
+  {area === 'projects' && (
+    <p class="editor-note">Category order here is saved to the draft, but the public Projects page currently shows all projects in one flat list — this order isn't visible there yet.</p>
+  )}
   {showSubheads ? (
     <div class="collection-groups" data-editable-area={area} data-collection-list>
-      {groups.map((group) => (
-        <div class="category-group">
-          <h2 class="mono group-subhead">{group.category}</h2>
+      {groups.map((group) => {
+        const reorderIndex = reorderableGroups.indexOf(group);
+        const isFirstReorderable = reorderIndex === 0;
+        const isLastReorderable = reorderIndex === reorderableGroups.length - 1;
+        return (
+        <div
+          class="category-group"
+          data-category-group={group.isPinned ? undefined : group.category}
+          data-pinned-group={group.isPinned ? 'true' : undefined}
+        >
+          <div class="group-subhead-row">
+            <h2 class="mono group-subhead" tabindex="-1">{group.category}</h2>
+            {!group.isPinned && (
+              <span class="group-move-controls">
+                <button
+                  type="button"
+                  class="group-move-btn"
+                  data-move-category={group.category}
+                  data-move-dir="up"
+                  aria-label={`Move ${group.category} up`}
+                  disabled={isFirstReorderable}
+                >Move up</button>
+                <button
+                  type="button"
+                  class="group-move-btn"
+                  data-move-category={group.category}
+                  data-move-dir="down"
+                  aria-label={`Move ${group.category} down`}
+                  disabled={isLastReorderable}
+                >Move down</button>
+              </span>
+            )}
+            {group.isPinned && (
+              <span class="editor-note pinned-note mono">(always last)</span>
+            )}
+          </div>
           <div class="cards">
             {group.entries.map((entry) => (
               <div class="card-slot" data-entry-id={entry.id}>
@@ -63,7 +111,8 @@ const showSubheads = isExperience && groups.length > 1;
             ))}
           </div>
         </div>
-      ))}
+        );
+      })}
       {/* ui-ux-designer-20260721T050000Z Item 3.2 — trailing, unlabeled
           "pending" grid. New entries created via "+ Add" during this
           session land here (not prematurely bucketed into "Other"); the
@@ -117,18 +166,21 @@ const showSubheads = isExperience && groups.length > 1;
   <p class="editor-note">Shown on the public page in place of the list when this section has zero entries.</p>
 </Band>
 
-<script define:vars={{ area, entries, emptyStates }}>
-  // define:vars serializes `entries`/`area`/`emptyStates` into this inline
-  // script — used only as the initial seed for the in-memory working state,
-  // never rendered back into the DOM as raw HTML.
+<script define:vars={{ area, entries, emptyStates, categoryOrder }}>
+  // define:vars serializes `entries`/`area`/`emptyStates`/`categoryOrder`
+  // into this inline script — used only as the initial seed for the
+  // in-memory working state, never rendered back into the DOM as raw HTML.
   window.__editorSeed = window.__editorSeed || {};
   window.__editorSeed[area] = entries;
   window.__editorSeed.emptyStates = emptyStates;
+  window.__editorSeed.categoryOrder = window.__editorSeed.categoryOrder || {};
+  window.__editorSeed.categoryOrder[area] = categoryOrder;
 </script>
 
 <script>
   import { makeAutosaver, saveArea, slugify, uniqueId } from '../../lib/editor/client';
-  import { commitAtomic, register, unregister, wireField } from '../../lib/editor/history';
+  import { commitActive, commitAtomic, register, unregister, wireField } from '../../lib/editor/history';
+  import { groupByCategory, normalizeCategoryOrder, reorderCategory } from '../../lib/experienceGroups';
 
   type Entry = {
     id: string;
@@ -162,9 +214,42 @@ const showSubheads = isExperience && groups.length > 1;
     const seed = ((window as unknown as { __editorSeed: Record<string, Entry[]> }).__editorSeed?.[areaName] ?? []) as Entry[];
     const working = new Map<string, Entry>(seed.map((entry) => [entry.id, { ...entry }]));
 
+    // --- Canonical category order (tech-lead-20260729T162747 §7) ---
+    // The single category accessor, shared by every grouping/ordering call
+    // in this file. Declared here because the `workingOrder` init below is
+    // its first use.
+    function categoryOf(entry: Entry): string {
+      return entry.category;
+    }
+
+    // Seeded from site.json's `ordering` entry (absent => [], today's live
+    // base case) and NORMALIZED here at INIT — before either autosaver is
+    // constructed — so `orderAutosaver`'s first snapshot is taken from the
+    // already-normalized value. Normalizing later would make init itself
+    // look like an edit and could trigger a spurious save (KB-0033).
+    const seedOrder = ((window as unknown as {
+      __editorSeed: { categoryOrder?: Record<string, string[]> };
+    }).__editorSeed?.categoryOrder?.[areaName] ?? []) as string[];
+    let workingOrder: string[] = normalizeCategoryOrder(
+      Array.from(working.values()),
+      categoryOf,
+      seedOrder
+    );
+
     const autosaver = makeAutosaver({
       save: () => saveArea(areaName, Array.from(working.values())),
       snapshot: () => JSON.stringify(Array.from(working.values())),
+    });
+
+    // Second autosaver, against the separate `categoryOrder` API area —
+    // exactly the idiom this file already uses for `emptyStates` below
+    // (client.ts documents multiple instances per page). A category Move
+    // writes ONLY this area, never the entries, so the "Saved to draft"
+    // the owner sees after a Move unambiguously refers to the order write
+    // and no partial-failure/false-"Saved" surface exists.
+    const orderAutosaver = makeAutosaver({
+      save: () => saveArea('categoryOrder', { collection: areaName, order: workingOrder }),
+      snapshot: () => JSON.stringify(workingOrder),
     });
 
     function fieldOf(el: HTMLElement): { id: string; field: keyof Entry } | null {
@@ -311,6 +396,11 @@ const showSubheads = isExperience && groups.length > 1;
               slot.remove();
               historyIds.forEach((historyId) => unregister(historyId));
               unregister(`${areaName}:${entryId}.href`);
+              // qa-engineer-20260728T230350 item 3: redo of a delete removes
+              // an entry exactly like the real delete handler below, so it
+              // needs the same ghost-group prune (see reorderGroupDom).
+              reorderGroupDom();
+              refreshMoveButtonStates();
               void autosaver.flush(); // undo/redo apply — short-circuits to a status refresh, no save (isApplying())
               return;
             }
@@ -395,6 +485,14 @@ const showSubheads = isExperience && groups.length > 1;
             onApply: (value) => {
               const entry = working.get(target.id);
               if (entry) (entry as unknown as Record<string, unknown>)[target.field] = value;
+              if (target.field === 'category') {
+                // Same ghost-group prune as delete (KB-0033 mirror case,
+                // qa-engineer-20260728T230350 item 3): undo/redo of a
+                // category edit can empty out — or refill — a group's live
+                // entry count just like a live edit can.
+                reorderGroupDom();
+                refreshMoveButtonStates();
+              }
               void autosaver.flush(); // undo/redo apply
             },
           });
@@ -405,6 +503,18 @@ const showSubheads = isExperience && groups.length > 1;
         // and performs the actual git-commit flush.
         el.addEventListener('blur', () => {
           void autosaver.flushIfDirty();
+          if (target?.field === 'category') {
+            // qa-engineer-20260728T230350 item 3, "or recategorized" half:
+            // retyping an entry's category away from its group can empty
+            // that group out exactly like a delete can. Prune the resulting
+            // ghost wrapper and recompute the remaining groups' disabled
+            // states. Deliberately does NOT create/move a wrapper for the
+            // entry's NEW category — full live regrouping stays "next full
+            // page load only" by this file's existing design (see
+            // reorderGroupDom's comment).
+            reorderGroupDom();
+            refreshMoveButtonStates();
+          }
         });
       });
 
@@ -492,6 +602,13 @@ const showSubheads = isExperience && groups.length > 1;
         slot.remove();
         historyIds.forEach((historyId) => unregister(historyId));
         unregister(`${areaName}:${id}.href`);
+        // qa-engineer-20260728T230350 item 3 fix: a delete can empty out
+        // the entry's category group — prune the resulting ghost wrapper
+        // (header + Move buttons) and recompute the remaining groups'
+        // boundary disabled states (removing a group can change which one
+        // is now first/last of the reorderable set).
+        reorderGroupDom();
+        refreshMoveButtonStates();
         commitAtomic(`${areaName}:${id}.__row__`, serialized, '');
         void autosaver.flush(); // deletion — discrete commit
       });
@@ -534,8 +651,207 @@ const showSubheads = isExperience && groups.length > 1;
       categoryEl?.focus();
     });
 
+    // --- Category-group reorder (tech-lead-20260729T162747 RATIFIED /
+    // ui-ux-designer-20260729T193000 spec / engineering-director RULINGs
+    // 1-3) ---
+    // EXPLICIT persisted-order model: a category Move mutates `workingOrder`
+    // (the canonical list, persisted to site.json's `ordering` entry through
+    // `orderAutosaver`) via the pure `reorderCategory` helper, and does NOT
+    // touch the entries at all. The run-1 implicit model — permuting
+    // `working`'s insertion order — was write-only w.r.t. the public site
+    // (KB-0036/KB-0020) and is gone.
+    // `list` here doubles as the grouped wrapper (`.collection-groups`)
+    // when `showSubheads` was true at render time; on the ungrouped render
+    // (projects/experience with <=1 category) it has no `.group-move-btn`
+    // descendants, so all of the wiring below is a no-op — safe either way.
+    const pendingGroupEl = document.querySelector<HTMLElement>('.category-group.pending-group');
+    // (`categoryOf` is declared up with the `workingOrder` init above, which
+    // is its first use — no reliance on function-declaration hoisting.)
+
+    // Re-derive groups from the CURRENT live entries AND the current
+    // `workingOrder` (not the load-time server-rendered `groups`), so a
+    // move's effect on category order is always computed from the same
+    // authority the render and the save use, at the same freshness
+    // (KB-0020 — the run-1 blocker was exactly a divergence here).
+    function liveGroups() {
+      return groupByCategory(Array.from(working.values()), categoryOf, workingOrder);
+    }
+
+    // Reposition the EXISTING `.category-group` wrapper elements (built at
+    // server render time) to match `liveGroups()`'s new order — never
+    // rebuilds card DOM, so in-progress field edits/focus inside a card are
+    // untouched by a sibling group's move. The pinned group (if present) is
+    // always last among `liveGroups()` by construction (groupByCategory);
+    // the trailing "pending" sink is repositioned last of all, always.
+    function reorderGroupDom(): void {
+      if (!list) return;
+      const live = liveGroups();
+      // qa-engineer-20260728T230350 item 3 fix, KB-0033 mirror case: a
+      // group's `.category-group` wrapper (header + Move buttons) was built
+      // ONCE at server-render time and, before this fix, was never removed
+      // when its last live entry disappeared — via delete, OR via a
+      // category-field edit that empties it out (the "or recategorized"
+      // half of the same acceptance item). Prune any wrapper here, in the
+      // ONE function that already derives "what does the live DOM structure
+      // need to look like" from `liveGroups()`, so every call site
+      // (delete, redo-of-delete, category-field commit, and moveCategory
+      // itself) shares this single derivation rather than each patching its
+      // own copy. Deliberately does NOT create a wrapper for a category
+      // that doesn't have one yet (e.g. a brand-new typed category, or a
+      // category whose wrapper was already pruned this session) — that
+      // would require moving the live card DOM to match, which stays
+      // "next full page load only" by this file's existing, documented
+      // design (see the `groups` header comment above); recreating a
+      // header with no card under it would just be a different-shaped
+      // version of the same ghost bug.
+      const liveCategories = new Set(live.filter((group) => !group.isPinned).map((group) => group.category));
+      const liveHasPinned = live.some((group) => group.isPinned);
+      list.querySelectorAll<HTMLElement>('.category-group:not(.pending-group)').forEach((el) => {
+        const isPinnedEl = el.getAttribute('data-pinned-group') === 'true';
+        const stillLive = isPinnedEl ? liveHasPinned : liveCategories.has(el.getAttribute('data-category-group') ?? '');
+        if (stillLive) return;
+        // qa-engineer-20260730T070002 defect D1: the wrapper is the PARENT of
+        // its `.card-slot`s, so removing it removes whatever is still inside.
+        // On the DELETE path the card is already gone (`slot.remove()` ran
+        // first), so the wrapper is genuinely empty and removing it is the
+        // whole point. On the CATEGORY-RETYPE path it is NOT — the entry is
+        // still live and its card is still physically inside the wrapper
+        // whose category it just left, so a bare `el.remove()` deleted the
+        // card the user had just edited (and detached its history
+        // controllers). Relocate any surviving slot into the trailing
+        // pending sink FIRST — the same placement "+ Add" and undo-of-delete
+        // already use for a card that has no group wrapper to sit under —
+        // then prune the now-genuinely-empty wrapper. This keeps the header
+        // vanishing (the item-3 fix) without resurrecting a header that has
+        // no card under it, which stays "next full page load only" per this
+        // function's design note above.
+        el.querySelectorAll<HTMLElement>('.card-slot').forEach((slotEl) => {
+          sinkEl.appendChild(slotEl);
+        });
+        el.remove();
+      });
+      for (const group of live) {
+        const selector = group.isPinned
+          ? '.category-group[data-pinned-group="true"]'
+          : `.category-group[data-category-group="${CSS.escape(group.category)}"]`;
+        const el = list.querySelector<HTMLElement>(selector);
+        if (el) list.appendChild(el);
+      }
+      if (pendingGroupEl) list.appendChild(pendingGroupEl);
+    }
+
+    // Re-evaluate each reorderable group's Move up/down disabled state
+    // against the new order — toggles the EXISTING buttons' `disabled`
+    // attribute in place (never recreates them), so a moved group's own
+    // buttons keep their element identity for the focus-management step
+    // below (ui-ux-designer-20260729T193000 §4).
+    function refreshMoveButtonStates(): void {
+      if (!list) return;
+      const reorderable = liveGroups().filter((group) => !group.isPinned);
+      reorderable.forEach((group, index) => {
+        const upBtn = list.querySelector<HTMLButtonElement>(
+          `.group-move-btn[data-move-category="${CSS.escape(group.category)}"][data-move-dir="up"]`
+        );
+        const downBtn = list.querySelector<HTMLButtonElement>(
+          `.group-move-btn[data-move-category="${CSS.escape(group.category)}"][data-move-dir="down"]`
+        );
+        if (upBtn) upBtn.disabled = index === 0;
+        if (downBtn) downBtn.disabled = index === reorderable.length - 1;
+      });
+    }
+
+    // Adopt a category order and re-render the group DOM to match. The
+    // run-1 `applyOrder(ids)` (which permuted `working`'s insertion order
+    // and needed its own two-way entry-id fail-soft) is gone: `working`'s
+    // key order no longer carries ordering meaning at all, and the
+    // fail-soft now lives structurally in `groupByCategory`'s partition —
+    // a name with no live group renders nothing, a live category the list
+    // omits renders last. Used by both a live Move and undo/redo apply.
+    function applyCategoryOrder(order: string[]): void {
+      workingOrder = order;
+      reorderGroupDom();
+      refreshMoveButtonStates();
+    }
+
+    // Focus management after a move (ui-ux-designer-20260729T193000 §4):
+    // same button if still enabled -> other direction's button on the same
+    // group if enabled -> that group's own (tabindex="-1") heading -> never
+    // silently dropped.
+    function focusAfterMove(category: string, dir: 'up' | 'down'): void {
+      if (!list) return;
+      const sameBtn = list.querySelector<HTMLButtonElement>(
+        `.group-move-btn[data-move-category="${CSS.escape(category)}"][data-move-dir="${dir}"]`
+      );
+      if (sameBtn && !sameBtn.disabled) {
+        sameBtn.focus();
+        return;
+      }
+      const otherDir = dir === 'up' ? 'down' : 'up';
+      const otherBtn = list.querySelector<HTMLButtonElement>(
+        `.group-move-btn[data-move-category="${CSS.escape(category)}"][data-move-dir="${otherDir}"]`
+      );
+      if (otherBtn && !otherBtn.disabled) {
+        otherBtn.focus();
+        return;
+      }
+      const heading = list.querySelector<HTMLElement>(
+        `.category-group[data-category-group="${CSS.escape(category)}"] .group-subhead`
+      );
+      heading?.focus();
+    }
+
+    function moveCategory(category: string, direction: -1 | 1): void {
+      commitActive(); // KB-0032 — commit any pending field edit before acting
+      const before = JSON.stringify(workingOrder);
+      // `reorderCategory` returns the new ORDER LIST, derived from the live
+      // entries — so the written value is self-pruning (names with no live
+      // entries drop out) and self-healing (live-but-unlisted categories
+      // are appended). This is the write-time prune; correctness never
+      // depends on it (tech-lead-20260729T162747 §4).
+      applyCategoryOrder(
+        reorderCategory(Array.from(working.values()), categoryOf, workingOrder, category, direction)
+      );
+      const after = JSON.stringify(workingOrder);
+      commitAtomic(`${areaName}:__order__`, before, after);
+      void orderAutosaver.flush(); // discrete commit, same idiom as add/remove
+      focusAfterMove(category, direction === -1 ? 'up' : 'down');
+    }
+
+    list.querySelectorAll<HTMLButtonElement>('.group-move-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        if (btn.disabled) return;
+        const category = btn.getAttribute('data-move-category');
+        const dir = btn.getAttribute('data-move-dir');
+        if (!category || (dir !== 'up' && dir !== 'down')) return;
+        moveCategory(category, dir === 'up' ? -1 : 1);
+      });
+    });
+
+    // Structural per-area history controller (tech-lead-20260729T162747 §7
+    // — RE-POINTED, not rebuilt: same id, same registration discipline;
+    // only its VALUE changed, from an entry-id permutation to the category
+    // ORDER LIST). Same family as the `__row__` row controllers above: ONE
+    // controller per area, registered ONCE here at init, NEVER unregistered.
+    // `register()` seeds `lastValue` from `read()` at call time (KB-0033 —
+    // normalizing/registering at init must not itself mark the area dirty;
+    // it doesn't, since `register()` only reads, never calls `markDirty`/
+    // `flush`, and `workingOrder` was normalized above BEFORE the autosavers
+    // were constructed). No dot in the id, so it can never collide with the
+    // `${areaName}:${entryId}.${field}` field-controller id shape.
+    // An undo can restore a category NAME that has since been renamed away;
+    // harmless — such a name has no rendering path (drift case c).
+    register({
+      id: `${areaName}:__order__`,
+      read: () => JSON.stringify(workingOrder),
+      apply: (value) => {
+        applyCategoryOrder(JSON.parse(value) as string[]);
+        void orderAutosaver.flush(); // undo/redo apply — short-circuits to a status refresh, no save (isApplying())
+      },
+    });
+
     window.addEventListener('editor:save-all', () => {
       void autosaver.flush();
+      void orderAutosaver.flush();
     });
   }
 
@@ -596,10 +912,11 @@ const showSubheads = isExperience && groups.length > 1;
   }
 
   /* ui-ux-designer-20260721T050000Z Item 3.2 — same "group subhead"
-     rhythm as experience.astro, mirrored here for the experience-branch
-     editor grouping (area === 'projects' never renders .category-group,
-     so this is inert/unused on that branch). Scoped to this component,
-     does NOT touch the shared global .cards rule. */
+     rhythm as experience.astro, mirrored here for the editor's grouped
+     render (director RULING 2, category-reorder batch: now used by BOTH
+     the experience and projects branches of THIS editor — the public
+     /projects page never renders .category-group). Scoped to this
+     component, does NOT touch the shared global .cards rule. */
   .category-group {
     margin-top: 2.5rem;
   }
@@ -620,6 +937,54 @@ const showSubheads = isExperience && groups.length > 1;
   .group-subhead {
     color: var(--signal-text);
     margin: 0 0 0.6rem;
+  }
+
+  /* ui-ux-designer-20260729T193000 §6 — category-group Move up/down
+     control, byte-for-byte reuse of EditHome.astro's .highlights-move-btn
+     family (same values, same disabled treatment; no new tokens). */
+  .group-subhead-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin: 0 0 0.6rem;
+  }
+
+  .group-subhead-row .group-subhead {
+    margin: 0;
+  }
+
+  .group-move-controls {
+    display: flex;
+    gap: 0.4rem;
+  }
+
+  .group-move-btn {
+    font-size: 0.72rem;
+    color: var(--ink);
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 0.35rem 0.55rem;
+    cursor: pointer;
+  }
+
+  .group-move-btn:hover:not(:disabled) {
+    border-color: var(--signal);
+  }
+
+  .group-move-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* ui-ux-designer-20260729T193000 §3 — pinned ("Other") group note, next
+     to its subhead in the same row; reuses .editor-note typography, scaled
+     down and inline (no block width cap). */
+  .pinned-note {
+    margin: 0;
+    font-size: 0.72rem;
   }
 
   .editor-note {

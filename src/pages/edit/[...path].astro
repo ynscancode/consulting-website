@@ -147,13 +147,27 @@ if (segments.length === 0) {
   const siteData = (siteJson.data ?? {}) as Record<string, any>;
   contentSource = result.source;
   pageTitle = 'Edit — Projects';
-  body = { view: 'projects', entries: result.data, emptyStates: emptyStatesFrom(siteData) };
+  body = {
+    view: 'projects',
+    entries: result.data,
+    emptyStates: emptyStatesFrom(siteData),
+    // tech-lead-20260729T162747 §3: no new read — `siteData` is already in
+    // hand. Absent `ordering` entry reads as [] (KB-0010 base case).
+    categoryOrder: siteData.ordering?.categoryOrder?.projects ?? [],
+  };
 } else if (area === 'experience' && !sub) {
   const [siteJson, result] = await Promise.all([loadSiteJson(), loadCollectionJson('experience')]);
   const siteData = (siteJson.data ?? {}) as Record<string, any>;
   contentSource = result.source;
   pageTitle = 'Edit — Experience';
-  body = { view: 'experience', entries: result.data, emptyStates: emptyStatesFrom(siteData) };
+  body = {
+    view: 'experience',
+    entries: result.data,
+    emptyStates: emptyStatesFrom(siteData),
+    // tech-lead-20260729T162747 §3: no new read — `siteData` is already in
+    // hand. Absent `ordering` entry reads as [] (KB-0010 base case).
+    categoryOrder: siteData.ordering?.categoryOrder?.experience ?? [],
+  };
 } else if (area === 'blog' && !sub) {
   const [siteJson, result] = await Promise.all([loadSiteJson(), loadBlogList()]);
   const siteData = (siteJson.data ?? {}) as Record<string, any>;
@@ -233,10 +247,10 @@ if (segments.length === 0) {
   {body?.view === 'about' && <EditAbout about={body.about} />}
   {body?.view === 'contact' && <EditContact contact={body.contact} emptyStates={body.emptyStates} />}
   {body?.view === 'projects' && (
-    <EditCollection area="projects" entries={body.entries} emptyStates={body.emptyStates} />
+    <EditCollection area="projects" entries={body.entries} emptyStates={body.emptyStates} categoryOrder={body.categoryOrder} />
   )}
   {body?.view === 'experience' && (
-    <EditCollection area="experience" entries={body.entries} emptyStates={body.emptyStates} />
+    <EditCollection area="experience" entries={body.entries} emptyStates={body.emptyStates} categoryOrder={body.categoryOrder} />
   )}
   {body?.view === 'blog-list' && <EditBlogList posts={body.posts} emptyStates={body.emptyStates} />}
   {body?.view === 'blog-post' && <EditBlogPost post={body.post} isNew={body.isNew} />}

@@ -1,4 +1,5 @@
 import { z } from 'astro:content';
+import type { RefinementCtx } from 'zod';
 import { ABOUT_IMAGE_PUBLIC_PATH_RE } from './contentPaths';
 import { isPersistableContactValue } from './contactValue';
 import { HERO_VARIANTS, DEFAULT_HERO_VARIANT } from './heroVariants';
@@ -172,8 +173,76 @@ export const projectEntrySchema = z.object({
   href: z.string().max(2048).optional(),
 });
 
-export const projectsBodySchema = z.array(projectEntrySchema).max(200);
-export const experienceBodySchema = z.array(projectEntrySchema).max(200);
+// Director RULING 3 (category-reorder batch, 20260729): identity + array
+// order is now the ENTIRE category-ordering model (implicit, tech-lead-
+// 20260728T224258Z RATIFIED) — a duplicate `id`/`slug` posted directly to
+// this endpoint (bypassing the client, the real trust boundary per KB-0017)
+// would silently corrupt the id-keyed working Map on next editor load. Kept
+// narrow per the ruling: only rejects duplicate `id`/`slug` WITHIN the
+// submitted array; does not otherwise tighten either schema.
+function rejectDuplicateIdentity(
+  entries: { id: string; slug: string }[],
+  ctx: RefinementCtx
+): void {
+  const seenIds = new Set<string>();
+  const seenSlugs = new Set<string>();
+  entries.forEach((entry, index) => {
+    if (seenIds.has(entry.id)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: [index, 'id'], message: 'duplicate id in submitted array' });
+    } else {
+      seenIds.add(entry.id);
+    }
+    if (seenSlugs.has(entry.slug)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: [index, 'slug'], message: 'duplicate slug in submitted array' });
+    } else {
+      seenSlugs.add(entry.slug);
+    }
+  });
+}
+
+export const projectsBodySchema = z.array(projectEntrySchema).max(200).superRefine(rejectDuplicateIdentity);
+export const experienceBodySchema = z.array(projectEntrySchema).max(200).superRefine(rejectDuplicateIdentity);
+
+// Category display order (tech-lead-20260729T162747 RATIFIED, item 1).
+// Persisted in site.json under the `ordering` entry, key `categoryOrder`.
+// This is the server trust boundary (KB-0017): the editor derives the list
+// from its live group list, but a direct POST is not bound by that.
+export const CATEGORY_ORDER_CAP = 50;
+
+// Mirrors `rejectDuplicateIdentity`'s shape. A duplicate category name is
+// meaningless and can only come from a crafted POST (the client derives the
+// list from a de-duped group list); the read path (`groupByCategory`'s
+// partition, guarded by a `seen` set) tolerates one anyway, so this is a
+// hard reject at the boundary rather than the sole line of defense.
+function rejectDuplicateCategory(order: string[], ctx: RefinementCtx): void {
+  const seen = new Set<string>();
+  order.forEach((name, index) => {
+    if (seen.has(name)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [index],
+        message: 'duplicate category in submitted order',
+      });
+    } else {
+      seen.add(name);
+    }
+  });
+}
+
+// DELIBERATELY ABSENT (tech-lead contract item 1, explicitly FORBIDDEN): any
+// cross-validation that a listed category actually exists in
+// experience.json/projects.json. The order list is user-authored ORDERING
+// data, not a category registry — coupling the two files at write time could
+// 400 a legitimate save purely because of write ordering, and would break the
+// "a brand-new category works with zero code changes" property. Existence is
+// resolved fail-soft at READ time instead (unmatched names render nothing).
+export const categoryOrderBodySchema = z.object({
+  collection: z.enum(['projects', 'experience']),
+  order: z
+    .array(z.string().min(1).max(200)) // .max(200) mirrors projectEntrySchema.category
+    .max(CATEGORY_ORDER_CAP)
+    .superRefine(rejectDuplicateCategory),
+});
 
 export const blogPostBodySchema = z.object({
   slug: slugSchema,
@@ -210,4 +279,5 @@ export type ProjectsBody = ReturnType<typeof projectsBodySchema.parse>;
 export type ExperienceBody = ReturnType<typeof experienceBodySchema.parse>;
 export type BlogPostBody = ReturnType<typeof blogPostBodySchema.parse>;
 export type EmptyStatesBody = ReturnType<typeof emptyStatesBodySchema.parse>;
+export type CategoryOrderBody = ReturnType<typeof categoryOrderBodySchema.parse>;
 export type HighlightRef = ReturnType<typeof highlightRefSchema.parse>;
