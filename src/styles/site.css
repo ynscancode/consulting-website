@@ -1,5 +1,6 @@
-/* Public-site styles (redesign). Imported only by SiteLayout; never by the
-   /edit editor, which stays on global.css. Ported from design-reference.html. */
+/* Public-site styles (redesign). Imported by SiteLayout; the /edit editor
+   inlines this file through src/styles/editor.css (it never imports the
+   public layout or components). Ported from design-reference.html. */
 
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}

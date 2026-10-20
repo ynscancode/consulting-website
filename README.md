@@ -6,7 +6,7 @@ Personal site for Isaiah Ho (business student, Singapore Management University),
 
 - **[Astro](https://astro.build)** (static output, no client-side framework). Content lives in JSON data files and Markdown, read through Astro content collections (`src/content.config.ts`) and compiled to static HTML at build time.
 - **Vercel** as the deploy target (via `@astrojs/vercel`). Pushing to `master` deploys production. See [`docs/DEVOPS-VERCEL-RUNBOOK.md`](./docs/DEVOPS-VERCEL-RUNBOOK.md).
-- **Fonts:** the public site loads EB Garamond (display) and Literata (text) from Google Fonts. The editor still uses the previous design's self-hosted `@fontsource` fonts.
+- **Fonts:** the public site loads EB Garamond (display) and Literata (text) from Google Fonts. The editor loads the same fonts.
 - **Inline editor** (`/edit`, GitHub OAuth, server-rendered): edits are saved to an `editor-draft` branch and published by merging into `master`. See [`docs/EDITOR-SETUP.md`](./docs/EDITOR-SETUP.md).
 
 **If you're here to edit content rather than code, use the editor ([`docs/EDITOR-SETUP.md`](./docs/EDITOR-SETUP.md)), or see [`CONTENT-GUIDE.md`](./CONTENT-GUIDE.md) for editing the files directly.**
@@ -40,6 +40,7 @@ There is no test suite and no linter configured. `npx astro check` type-checks t
 ```
 src/
 ├── pages/                     # Routes (see table above)
+│   └── dev-repro/             # DEV-only editor harness (?view=), 404s in production
 ├── data/
 │   ├── site.json              # Hero, about, contact, empty-state text, category order
 │   ├── experience.json        # Experience entries
@@ -48,16 +49,15 @@ src/
 ├── content.config.ts          # Collection schemas for all of the above
 ├── layouts/
 │   ├── SiteLayout.astro       # Public site: <head>/SEO tags, header, footer
-│   └── BaseLayout.astro       # Editor (/edit): previous design's layout
+│   └── EditLayout.astro       # Editor (/edit): shell, footer, toolbar slot
 ├── components/
 │   ├── site/                  # Public site sections (Hero, About, ExperienceLedger, ProjectGrid, WritingBand, Contact, …)
-│   ├── edit/                  # Editor views
-│   ├── hero/                  # Animated hero graphics (used by the editor only)
-│   └── Hero, Band, Card, Nav, Footer, EditorHarness   # Previous design's components, used by the editor
+│   ├── edit/                  # Editor views, EditHeader, and the editable row/card twins
+│   └── EditorHarness.astro    # Editor toolbar (save, undo/redo, preview, publish)
 ├── styles/
 │   ├── tokens.css             # Design tokens (colours, fonts, widths) for the public site
 │   ├── site.css               # Public site styles
-│   └── global.css             # Editor styles (previous design)
+│   └── editor.css             # Editor chrome; imports tokens + site
 ├── lib/                       # Shared helpers (date formatting, grouping, editor/GitHub/Vercel plumbing)
 └── middleware.ts              # Editor session gate
 
@@ -66,4 +66,4 @@ public/                        # Static files (favicon, about photo)
 docs/                          # Editor setup and Vercel runbook
 ```
 
-The public site's components take plain data as props, and the pages load the data. The editor still renders in the previous design, so the plan is to move its views onto the `site/` components and then retire the old components, `global.css` and the `@fontsource` packages.
+The public site's components take plain data as props, and the pages load the data. The editor renders in the same design and shares `site.css`'s class names, but it imports no public module (`site/` components, `SiteLayout`): the editable markup is written separately in `edit/`, and `editor.css` inlines `tokens.css` and `site.css`. This is by design, so editor work can't change the public build output.
