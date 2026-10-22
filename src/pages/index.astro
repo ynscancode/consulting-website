@@ -1,155 +1,90 @@
 ---
-import { getCollection, getEntry } from 'astro:content';
-import BaseLayout from '../layouts/BaseLayout.astro';
-import Hero from '../components/Hero.astro';
-import HeroGraphic from '../components/hero/HeroGraphic.astro';
-import Band from '../components/Band.astro';
-import Card from '../components/Card.astro';
-import { deriveEyebrow } from '../lib/eyebrow';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import Receipt from '../components/site/Receipt.astro';
+import Steps from '../components/site/Steps.astro';
+import InsightCard from '../components/site/InsightCard.astro';
+import SelfCheck from '../components/site/SelfCheck.astro';
+import { content } from '../lib/aviseContent';
 
-const allProjects = await getCollection('projects');
-const allPosts = await getCollection('blog', ({ data }) => !data.draft);
-
-const homeEntry = await getEntry('site', 'home');
-const hero = homeEntry!.data.hero!;
-
-const dateFormatter = new Intl.DateTimeFormat('en-SG', { month: 'short', year: 'numeric' });
-
-// Homepage Highlights (tech-lead-20260720T113459Z / ui-ux-designer-
-// 20260720T120500Z) — a user-curated, manually-ordered mix of projects +
-// blog posts, replacing the two auto-recency Bands below. Refs are NEVER
-// copied titles; resolve against the live collections IN ORDER, and
-// fail-soft: a ref that no longer resolves (deleted project, deleted/
-// draft:true post) is silently skipped — never a build error, never a
-// broken card (AC7 public side).
-const rawHighlights = Array.isArray(homeEntry?.data.highlights) ? homeEntry.data.highlights : [];
-type ResolvedHighlight =
-  | { kind: 'project'; eyebrow: string; title: string; body: string; href: string }
-  | { kind: 'blog'; eyebrow: string; title: string; body: string; href: string; tags: string[] };
-
-const highlights: ResolvedHighlight[] = [];
-for (const ref of rawHighlights) {
-  if (ref.type === 'project') {
-    const project = allProjects.find((p) => p.data.slug === ref.ref);
-    if (!project) continue;
-    highlights.push({
-      kind: 'project',
-      eyebrow: `PROJECT · ${deriveEyebrow(project.data.category, project.data.startDate, project.data.endDate)}`,
-      title: project.data.title,
-      body: project.data.body,
-      href: `/projects/${project.data.slug}`,
-    });
-  } else if (ref.type === 'blog') {
-    const post = allPosts.find((p) => p.id === ref.ref);
-    if (!post) continue;
-    highlights.push({
-      kind: 'blog',
-      eyebrow: `POST · ${dateFormatter.format(post.data.date).toUpperCase()}`,
-      title: post.data.title,
-      body: post.data.description,
-      href: `/blog/${post.id}`,
-      tags: post.data.tags,
-    });
-  }
-}
-
-const emptyStatesEntry = await getEntry('site', 'emptyStates');
-const highlightsEmptyText =
-  typeof emptyStatesEntry?.data.highlights === 'string'
-    ? emptyStatesEntry.data.highlights
-    : 'No highlights selected yet — check back soon.';
-
-// Group-by-type render (tech-lead-20260720T160424Z item 4, ratified /
-// ui-ux-designer-20260721T050000Z #6-#7). Pure render-time partition of the
-// already-resolved, manually-ordered `highlights` — no data/schema change.
-// Manual order is preserved WITHIN each type-group. Fail-soft: an empty
-// type-group renders nothing (no heading, no grid, no gap). Lone-subhead
-// suppression: when only one of the two groups is populated, that group's
-// cards render directly under <h2>Highlights</h2> with no "Projects"/"Blog"
-// subhead — today's homepage (Blog empty) is visually unchanged.
-const projectHighlights = highlights.filter((item) => item.kind === 'project');
-const blogHighlights = highlights.filter((item) => item.kind === 'blog');
-const showBothSubheads = projectHighlights.length > 0 && blogHighlights.length > 0;
+const { heroReceipt, services, steps, insights, symptoms, areas, findings } = content;
 ---
 
-<BaseLayout
-  title="Home"
-  description="Isaiah Ho — business student at Singapore Management University building toward a career in strategy consulting. Writing, projects, and structured thinking applied to real problems."
->
-  <Hero
-    eyebrow={hero.eyebrow}
-    headlineHtml={hero.headlineHtml}
-    lede={hero.lede}
-    primaryCta={hero.primaryCta}
-    ghostCta={hero.ghostCta}
-  >
-    <HeroGraphic slot="matrix" default={hero.graphic ?? 'synthesis'} />
-  </Hero>
+<SiteLayout description="Practical strategy for Singapore small businesses. We do the homework on your business first, then bring you one thing you did not already know.">
+  <section class="band band--forest on-dark">
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <p class="label">Practical strategy for Singapore small businesses</p>
+        <h1 class="d-xl">Made for owners. We'll tell you <em class="em">straight.</em></h1>
+        <p class="lede">We do the homework on your business first, then bring you one thing you did not already know.</p>
+        <div class="btn-row" id="heroCta">
+          <a class="btn btn--act" href="/contact">Book a free consult</a>
+          <a class="btn btn--outline" href="/services">See what we do</a>
+        </div>
+        <p class="caption muted">Video call, about [30] minutes. No pitch deck, promise.</p>
+      </div>
+      <Receipt variant="hero" label="What the free consultation includes" data={heroReceipt} />
+    </div>
+  </section>
 
-  <Band variant="paper">
-    <h2>Highlights</h2>
-    {
-      highlights.length > 0 ? (
-        <Fragment>
-          {projectHighlights.length > 0 && (
-            <div class={showBothSubheads ? 'subgroup subgroup--labeled' : 'subgroup'}>
-              {showBothSubheads && <h3 class="mono group-subhead">Projects</h3>}
-              <div class="cards">
-                {projectHighlights.map((item) => (
-                  <Card
-                    eyebrow={item.eyebrow}
-                    title={item.title}
-                    body={item.body}
-                    href={item.href}
-                  />
+  <section class="band band--paper on-light">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="label">What we do</p>
+        <h2 class="d-l">Three problems we solve <em class="em">well.</em></h2>
+      </div>
+      <div class="services">
+        {
+          services.map((s) => (
+            <div class="service">
+              <h3 class="d-s">{s.name}</h3>
+              <p class="body-s" style="color:var(--ink-muted)">
+                {s.short}
+              </p>
+              <ul>
+                {s.items.map((i) => (
+                  <li>{i}</li>
                 ))}
-              </div>
+              </ul>
+              <a class="more text-link" href={`/services#svc-${s.id}`}>
+                More on this →
+              </a>
             </div>
-          )}
-          {blogHighlights.length > 0 && (
-            <div class={showBothSubheads ? 'subgroup subgroup--labeled' : 'subgroup'}>
-              {showBothSubheads && <h3 class="mono group-subhead">Blog</h3>}
-              <div class="cards">
-                {blogHighlights.map((item) => (
-                  <Card
-                    eyebrow={item.eyebrow}
-                    title={item.title}
-                    body={item.body}
-                    href={item.href}
-                    tags={item.tags}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-        </Fragment>
-      ) : (
-        <p class="empty-state">{highlightsEmptyText}</p>
-      )
-    }
-  </Band>
-</BaseLayout>
+          ))
+        }
+      </div>
+      <div class="note-row">
+        <strong>Strategy only.</strong>
+        <span>We don't make your posts or run your ads. We tell you which ones are worth making.</span>
+      </div>
+    </div>
+  </section>
 
-<style>
-  /* Highlights Projects/Blog subgroups (tech-lead-20260720T160424Z item 4 /
-     ui-ux-designer-20260721T050000Z #6-#7). Reuses the "group subhead"
-     primitive (mono + --signal-text, same family as Band's own .eyebrow).
-     Lone-subhead suppression (no `subgroup--labeled` class) keeps the
-     single-group case pixel-identical to the pre-grouping render: no extra
-     margin, .cards keeps the sitewide 2rem margin-top from global.css. */
-  .subgroup:not(:first-of-type) {
-    margin-top: 2rem;
-    border-top: 1px solid var(--line);
-    padding-top: 2rem;
-  }
+  <SelfCheck symptoms={symptoms} areas={areas} findings={findings} />
 
-  .group-subhead {
-    margin: 0 0 0.6rem;
-    color: var(--signal-text);
-  }
+  <section class="band band--ink on-dark">
+    <div class="wrap how-grid">
+      <div class="stack">
+        <p class="label">How we work</p>
+        <h2 class="d-l">Diagnose first. Then <em class="em">fix.</em></h2>
+        <p class="lede muted">The free consult names the problem. The project fixes it. You decide in between.</p>
+        <div><a class="btn btn--outline" href="/approach">The full process</a></div>
+      </div>
+      <Steps steps={steps} />
+    </div>
+  </section>
 
-  .subgroup--labeled .cards {
-    margin-top: 1.25rem;
-  }
-</style>
-
+  <section class="band band--paper on-light">
+    <div class="wrap">
+      <div class="section-head section-head--split">
+        <div class="stack" style="gap:var(--space-2)">
+          <p class="label">Insights</p>
+          <h2 class="d-l">Receipts for every <em class="em">claim.</em></h2>
+        </div>
+        <a class="text-link" href="/insights" style="font-weight:500">All insights →</a>
+      </div>
+      <div class="cards">
+        {insights.map((a) => <InsightCard insight={a} />)}
+      </div>
+    </div>
+  </section>
+</SiteLayout>

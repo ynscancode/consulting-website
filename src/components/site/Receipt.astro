@@ -1,0 +1,22 @@
+---
+import { receiptHTML, type ReceiptData } from '../../lib/receipt';
+
+export type Props = {
+  data: ReceiptData;
+  /** Shadow for the ground it sits on: hero (forest, beside the hero), dark (forest/ink), rose. */
+  variant: 'hero' | 'dark' | 'rose';
+  id?: string;
+  label?: string;
+  live?: boolean;
+};
+
+const { data, variant, id, label, live } = Astro.props;
+---
+
+<div
+  id={id}
+  class={`receipt receipt--${variant}`}
+  aria-label={label}
+  aria-live={live ? 'polite' : undefined}
+  set:html={receiptHTML(data)}
+/>

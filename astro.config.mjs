@@ -4,7 +4,7 @@ import vercel from '@astrojs/vercel';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://isaiah-ho.vercel.app',
+  site: 'https://avise-co.vercel.app',
   output: 'static',
   adapter: vercel(),
 });

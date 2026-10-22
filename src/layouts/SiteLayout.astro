@@ -1,0 +1,77 @@
+---
+import '../styles/avise.css';
+import SiteHeader from '../components/site/SiteHeader.astro';
+import SiteFooter from '../components/site/SiteFooter.astro';
+import type { NavKey, Ground } from '../components/site/SiteHeader.astro';
+
+export type Props = {
+  /** Page name; omitted on the homepage. */
+  title?: string;
+  description: string;
+  ogImage?: string;
+  /** Nav item to mark as the current page. */
+  current?: NavKey;
+  /** The footer's "Book a free consult" band; hidden on the contact page, which also drops the header's. */
+  showCta?: boolean;
+  /** Ground of the page's first band (the header's starting colours). */
+  ground?: Ground;
+};
+
+const { title, description, ogImage, current, showCta = true, ground = 'forest' } = Astro.props;
+
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+const siteTitle = title ? `${title} · Avisé & Co.` : 'Avisé & Co. · Practical strategy for Singapore small businesses';
+---
+
+<html lang="en-SG">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#1e4d37" />
+    <meta name="generator" content={Astro.generator} />
+
+    <title>{siteTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalURL} />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Avisé & Co." />
+    <meta property="og:title" content={siteTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalURL} />
+    {ogImage && <meta property="og:image" content={new URL(ogImage, Astro.site)} />}
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={siteTitle} />
+    <meta name="twitter:description" content={description} />
+    {ogImage && <meta name="twitter:image" content={new URL(ogImage, Astro.site)} />}
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&display=swap"
+    />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <SiteHeader current={current} ground={ground} hideCta={!showCta} />
+    <main id="main">
+      <slot />
+    </main>
+    <SiteFooter showCta={showCta} />
+    <div class="toast" id="toast" role="status" hidden></div>
+    <script>
+      // Smooth scrolling is for in-page anchors only: switch it on after the
+      // page (and any cross-page anchor jump) has landed.
+      const enableSmooth = () => requestAnimationFrame(() => document.documentElement.classList.add('smooth-scroll'));
+      if (document.readyState === 'complete') enableSmooth();
+      else window.addEventListener('load', enableSmooth, { once: true });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,24 @@
+---
+import type { AviseContent } from '../../lib/aviseContent';
+
+export type Props = {
+  steps: AviseContent['steps'];
+};
+
+const { steps } = Astro.props;
+---
+
+<ol class="steps">
+  {
+    steps.map((s, i) => (
+      <li>
+        <span class="steps__num" aria-hidden="true">{i + 1}</span>
+        <span class="steps__text">
+          <span class="steps__title">{s.t}</span>
+          <span class="steps__body">{s.b}</span>
+          {s.tag && <span class="steps__tag">{s.tag}</span>}
+        </span>
+      </li>
+    ))
+  }
+</ol>

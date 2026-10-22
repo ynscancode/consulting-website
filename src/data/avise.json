@@ -1,0 +1,354 @@
+{
+  "heroReceipt": {
+    "number": "No. 0001",
+    "lines": [
+      {
+        "l": "Homework on your business",
+        "v": "✓"
+      },
+      {
+        "l": "Root cause, named",
+        "v": "✓"
+      },
+      {
+        "l": "Ways to fix it",
+        "v": "✓"
+      },
+      {
+        "l": "Pitch deck",
+        "v": "none"
+      },
+      {
+        "l": "Cost to you",
+        "v": "S$0.00",
+        "hl": true
+      }
+    ],
+    "finding": "Then you <em>decide.</em>",
+    "footer": "Free consult. Thank you, come again."
+  },
+  "services": [
+    {
+      "id": "profit",
+      "name": "Grow profit",
+      "short": "More from the customers you already get, and less leaking out the back.",
+      "items": [
+        "Pricing, bundles and discount structure",
+        "Cost review when cash is tight",
+        "Positioning and the channels worth your time"
+      ],
+      "when": [
+        "Busy months still leave thin margins",
+        "People browse but leave without buying",
+        "You discount often and it stopped working",
+        "Not enough of the right people know you exist"
+      ],
+      "get": [
+        "A pricing structure you can put on the shelf next week",
+        "Costs ranked by what you can cut first",
+        "Who to target, what to say, and where",
+        "A short brief and a one-page tracker"
+      ]
+    },
+    {
+      "id": "ops",
+      "name": "Fix operations",
+      "short": "Map how work actually gets done, then make it lighter for you to run.",
+      "items": [
+        "Process mapping and workflow fixes",
+        "Simple stock and sales tracking",
+        "Sourcing and supplier set-up"
+      ],
+      "when": [
+        "Everything waits on you",
+        "Stock piles up or runs out",
+        "You don’t know which items actually make money",
+        "Sourcing depends on luck"
+      ],
+      "get": [
+        "A map of your current process and the fixed one",
+        "A tracker or dashboard sized to your business",
+        "Steps your staff can follow without you",
+        "A check-in once it’s running"
+      ]
+    },
+    {
+      "id": "market",
+      "name": "Test a market",
+      "short": "Check a new outlet, product line or customer group before you commit money.",
+      "items": [
+        "Market research and sizing",
+        "Customer and competitor read",
+        "Go or no-go, with the reasons"
+      ],
+      "when": [
+        "You’re eyeing a second outlet",
+        "You want to launch a new product line",
+        "You’re thinking of moving online or overseas",
+        "A landlord or partner wants an answer soon"
+      ],
+      "get": [
+        "Who buys, how many, and who already sells to them",
+        "What it would take to win there",
+        "A clear recommendation with sources",
+        "The questions to ask before you sign"
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "t": "Tell us the problem",
+      "b": "Book a slot or DM us. Any problem, in your own words.",
+      "tag": "Free"
+    },
+    {
+      "t": "We find the real problem",
+      "b": "We read up on you first. On the call we name the likely cause and the ways to fix it.",
+      "tag": "Free"
+    },
+    {
+      "t": "We scope the fix",
+      "b": "If a project makes sense, you get one short brief: what we’ll do, what you get, and a fixed fee."
+    },
+    {
+      "t": "We build it with you",
+      "b": "Fixes that are light to run: a pricing structure, a tracker, a process your staff can follow."
+    },
+    {
+      "t": "We stay on call",
+      "b": "Questions about what we built? Ask. Linked projects come later, only if you want them."
+    }
+  ],
+  "principles": [
+    {
+      "t": "We look before we <em>talk.</em>",
+      "b": "Every consult starts with homework on your business, your street and your competitors."
+    },
+    {
+      "t": "We say it <em>straight.</em>",
+      "b": "Bad news included. You’re paying for the honest read, not for comfort."
+    },
+    {
+      "t": "Cheap fixes <em>first.</em>",
+      "b": "When cash is tight, we look for savings before anything that costs you more."
+    },
+    {
+      "t": "It keeps <em>working.</em>",
+      "b": "What we build is yours and simple to run. No lock-in, no software you have to keep paying for."
+    }
+  ],
+  "faqServices": [
+    {
+      "q": "How much does a project cost?",
+      "a": "We quote a fixed fee after the free consult, once we know the scope. Rates are agreed per engagement."
+    },
+    {
+      "q": "How long does a project take?",
+      "a": "Most run [two to six] weeks, depending on scope. We agree the timeline in the brief."
+    },
+    {
+      "q": "Do I need to prepare anything?",
+      "a": "No. If you have sales records or a rough stock list, they help. We can start without them."
+    },
+    {
+      "q": "Will you make our social posts?",
+      "a": "No. We set the strategy: who to reach, what to say and where. Making the content stays with you."
+    }
+  ],
+  "faqContact": [
+    {
+      "q": "Is the consult really free?",
+      "a": "Yes. We name the likely cause and the directions to fix it. The detailed fix is the paid project, if you want one."
+    },
+    {
+      "q": "Do you meet in person?",
+      "a": "Consults are by video call so they fit around your opening hours."
+    },
+    {
+      "q": "What if I don’t know what’s wrong?",
+      "a": "That’s normal. Tell us what you’re seeing. Working back to the cause is our job."
+    }
+  ],
+  "insights": [
+    {
+      "id": "same-shelves",
+      "sector": "Retail",
+      "meta": "Insight 01, retail",
+      "tone": "card",
+      "headline": "Why does every shop on this street sell the same thing?",
+      "lede": "Walk down [street] and the racks start to blur. Same brands, same price points, same handwritten tags.",
+      "body": [
+        "When shops source from the same places, they end up competing on the one thing left: price. That is a race the smallest shop rarely wins.",
+        "The gap is curation. Customers will pay for a shop that has already done the sorting for them: a clear edit, a reason to come back on a given day, and a story behind the rail.",
+        "## What we looked at",
+        "We walked [n] shops on [street] over [period], logged what each sold and how each priced, and compared it with where they say they source.",
+        "## What an owner can do this month",
+        "Pick one edit you can own and say it on the shopfront. Price the edit as a set, not item by item. Track which edit sells through fastest and drop the slowest."
+      ],
+      "receipt": {
+        "title": "Street audit",
+        "number": "No. 01",
+        "lines": [
+          {
+            "l": "Shops walked",
+            "v": "[n]"
+          },
+          {
+            "l": "Same top brands",
+            "v": "[x]%"
+          },
+          {
+            "l": "Compete mainly on price",
+            "v": "[x]%",
+            "hl": true
+          },
+          {
+            "l": "Clear curation",
+            "v": "[x]%"
+          }
+        ],
+        "finding": "Price is crowded. Curation is <em>open.</em>",
+        "source": "Source: our analysis, [2026]"
+      }
+    },
+    {
+      "id": "one-for-one",
+      "sector": "F&B",
+      "meta": "Insight 02, F&B",
+      "tone": "forest",
+      "headline": "Your 1-for-1 is teaching customers to wait.",
+      "lede": "Run the same deal every Tuesday and Tuesday becomes the only day some regulars show up.",
+      "body": [
+        "Discounts move volume on the day. The cost shows up later, as full-price days get quieter and the deal becomes the price customers expect.",
+        "There are better levers. A bundle raises the bill without cutting the headline price. An anchor item makes the main menu look like good value. A discount tied to a slow hour fills the gap without training the whole week.",
+        "## What we looked at",
+        "We compared [n] months of [café] sales on deal days against the days around them, with the owner’s permission.",
+        "## What an owner can do this month",
+        "Swap one standing discount for a bundle. Keep the price on the board the same and watch the average bill for four weeks."
+      ],
+      "receipt": {
+        "title": "Deal day check",
+        "number": "No. 02",
+        "lines": [
+          {
+            "l": "Deal day covers",
+            "v": "+[x]%"
+          },
+          {
+            "l": "Day after, covers",
+            "v": "−[x]%"
+          },
+          {
+            "l": "Average bill, deal day",
+            "v": "−[x]%",
+            "hl": true
+          },
+          {
+            "l": "Regulars only on deal day",
+            "v": "[x]%"
+          }
+        ],
+        "finding": "The deal moved demand. It didn’t <em>add</em> it.",
+        "source": "Source: [café] sales data, [2026]"
+      }
+    },
+    {
+      "id": "answers-every-dm",
+      "sector": "Services",
+      "meta": "Insight 03, services",
+      "tone": "card",
+      "headline": "The salon owner who answers every DM herself.",
+      "lede": "Bookings, reschedules, price questions, all through one phone. The business grows exactly as fast as she can reply.",
+      "body": [
+        "Most of those messages ask the same five things. Each one takes a minute; together they take the hours that should go to clients or to growing the business.",
+        "The fix is unglamorous: a short menu of answers, a booking link that handles the rest, and one rule for what still needs her personally.",
+        "## What we looked at",
+        "We sorted [n] weeks of the owner’s messages by type and timed how long each kind took to close.",
+        "## What an owner can do this month",
+        "Count your messages for one week by type. Write a saved reply for the top three. Put the booking link in your bio and your auto-reply."
+      ],
+      "receipt": {
+        "title": "Inbox sort",
+        "number": "No. 03",
+        "lines": [
+          {
+            "l": "Messages a week",
+            "v": "[n]"
+          },
+          {
+            "l": "Same five questions",
+            "v": "[x]%",
+            "hl": true
+          },
+          {
+            "l": "Owner hours a week",
+            "v": "[x]"
+          },
+          {
+            "l": "Need the owner",
+            "v": "[x]%"
+          }
+        ],
+        "finding": "Most messages need an answer, not <em>her.</em>",
+        "source": "Source: owner’s inbox, with permission, [2026]"
+      }
+    }
+  ],
+  "symptoms": [
+    {
+      "id": "browse",
+      "label": "People browse but leave without buying",
+      "fix": "Pricing and layout",
+      "area": "profit"
+    },
+    {
+      "id": "reach",
+      "label": "Not enough people know we exist",
+      "fix": "Positioning and channels",
+      "area": "profit"
+    },
+    {
+      "id": "margin",
+      "label": "Busy months still leave thin margins",
+      "fix": "Pricing and costs",
+      "area": "profit"
+    },
+    {
+      "id": "stock",
+      "label": "Stock piles up or runs out",
+      "fix": "Simple stock tracking",
+      "area": "ops"
+    },
+    {
+      "id": "me",
+      "label": "Everything waits on me",
+      "fix": "Process mapping",
+      "area": "ops"
+    },
+    {
+      "id": "source",
+      "label": "Sourcing depends on luck",
+      "fix": "Sourcing set-up",
+      "area": "ops"
+    },
+    {
+      "id": "grow",
+      "label": "Thinking about a new outlet or product line",
+      "fix": "Market check",
+      "area": "market"
+    }
+  ],
+  "areas": {
+    "profit": "Grow profit",
+    "ops": "Fix operations",
+    "market": "Test a market"
+  },
+  "findings": {
+    "profit": "Start with <em>profit.</em>",
+    "ops": "Start with <em>operations.</em>",
+    "market": "Start with <em>the market.</em>"
+  },
+  "extraSectors": [
+    "Online"
+  ]
+}
