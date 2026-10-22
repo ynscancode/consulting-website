@@ -29,7 +29,7 @@ variables in step 2c.
 
 1. Go to **https://github.com/settings/developers** → **OAuth Apps** → **New OAuth App**.
 2. Fill in:
-   - **Application name:** anything recognizable, e.g. `isaiah-ho-editor`.
+   - **Application name:** anything recognizable, e.g. `avise-editor`.
    - **Homepage URL:** your production site origin, e.g. `https://avise.co`.
    - **Authorization callback URL:** `{site origin}/api/auth/callback`. The editor
      validates the OAuth `state` against a single callback path baked into the code
@@ -108,7 +108,7 @@ Two places need these values:
 | `GIT_WRITE_TOKEN` | The fine-grained PAT the backend uses to commit/read/delete content files via the GitHub API | Generated in §2b step 6 | `.env.local` (dev) + Vercel (server-only) |
 | `GITHUB_REPO` | `owner/repo` — the single repo the git-write API is allowed to touch | `ynscancode/consulting-website` | `.env.local` + Vercel |
 | `DRAFT_BRANCH` | The branch name the editor commits drafts to; Publish merges this into `master` | `editor-draft` (or whatever the devops runbook / repo actually uses — confirm it matches what's configured, since a mismatch means Save/Publish silently target the wrong branch) | `.env.local` + Vercel |
-| `VERCEL_PREVIEW_URL_TEMPLATE` *(optional)* | Template for the draft branch's live preview link shown in the editor's **Preview** button, with a `{branch}` placeholder, e.g. `https://isaiah-ho-git-{branch}-<vercel-scope>.vercel.app` | Devops runbook is the source of truth for the exact pattern — it depends on the Vercel project/team scope. If unset, Preview falls back to a plain GitHub branch URL instead of a real Vercel preview link (still functional, just not a live rendered preview). | Vercel only (not needed locally, since local dev doesn't have preview deployments) |
+| `VERCEL_PREVIEW_URL_TEMPLATE` *(optional)* | Template for the draft branch's live preview link shown in the editor's **Preview** button, with a `{branch}` placeholder, e.g. `https://preview.avise.co` (the custom domain assigned to the draft branch) | Devops runbook is the source of truth for the exact pattern — it depends on the Vercel project/team scope. If unset, Preview falls back to a plain GitHub branch URL instead of a real Vercel preview link (still functional, just not a live rendered preview). | Vercel only (not needed locally, since local dev doesn't have preview deployments) |
 
 ### 2d. Never commit secrets
 
