@@ -5,9 +5,9 @@ Source of truth for the `vercel env add` commands referenced from
 [`EDITOR-SETUP.md`](./EDITOR-SETUP.md) §2c. Config-verification + provisioning only —
 no app code in this document.
 
-Project: `consulting-website` (production domain `avise.co`, draft-branch domain `preview.avise.co`), team/scope: `hottudoggu1`, repo: `github.com/ynscancode/consulting-website`,
+Project: `avise`, team/scope: `hottudoggu1`, repo: `github.com/ynscancode/consulting-website`,
 production branch: `master`, draft branch: `editor-draft` (`DRAFT_BRANCH`). Assumes
-`vercel link` has bound this repo checkout to the `consulting-website` project.
+`vercel link` has bound this repo checkout to the `avise` project.
 
 ## 1. Build/config verification (done, findings below)
 
@@ -100,7 +100,7 @@ vercel env add GIT_WRITE_TOKEN production preview
 # the client (confirmed by security-engineer's gate + qa-engineer's grep of dist/).
 
 vercel env add VERCEL_PREVIEW_URL_TEMPLATE production preview
-# value: https://preview.avise.co
+# value: https://avise-git-editor-draft-hottudoggu1.vercel.app
 # NOTE: despite the "{branch}" placeholder documented in .env.local.example, this repo
 # has exactly one draft branch (editor-draft, fixed by DRAFT_BRANCH). Setting the fully
 # resolved URL directly is simpler and correct today; if a second draft branch is ever
@@ -127,20 +127,20 @@ backend builds is `{PUBLIC_SITE_URL}/api/auth/callback`, and it must match a cal
 URL actually registered on the GitHub OAuth App, or GitHub rejects the login attempt
 before it ever reaches this app's code.
 
-- **Production:** `PUBLIC_SITE_URL=https://avise.co`
-- **Preview:** `PUBLIC_SITE_URL=https://preview.avise.co`
-  — a custom domain assigned to the `editor-draft` git branch (Project → Settings →
-  Domains → add `preview.avise.co` → Git Branch: `editor-draft`), so it always serves
-  the latest draft deployment. Use this, **not** the random per-deployment-hash
-  preview URL, which changes on every push and can't be pre-registered as an OAuth
-  callback.
+- **Production:** `PUBLIC_SITE_URL=https://avise.vercel.app`
+- **Preview:** `PUBLIC_SITE_URL=https://avise-git-editor-draft-hottudoggu1.vercel.app`
+  — this is Vercel's **stable git-branch alias** for `editor-draft`
+  (`<project>-git-<branch-slug>-<team-slug>.vercel.app`), assigned automatically to
+  every branch deployment by default. Use this, **not** the random per-deployment-hash
+  preview URL (`avise-<hash>-hottudoggu1.vercel.app`), which changes on every push
+  and can't be pre-registered as an OAuth callback.
 
 ```
 vercel env add PUBLIC_SITE_URL production
-# value: https://avise.co
+# value: https://avise.vercel.app
 
 vercel env add PUBLIC_SITE_URL preview --git-branch editor-draft
-# value: https://preview.avise.co
+# value: https://avise-git-editor-draft-hottudoggu1.vercel.app
 ```
 
 **Why `--git-branch editor-draft` and not a plain `preview` scope:** a Vercel env var
@@ -163,8 +163,8 @@ tightly, though it matters less there since their value doesn't change per branc
 
 **GitHub OAuth App callback URLs to register (EDITOR-SETUP.md §2a):**
 ```
-https://avise.co/api/auth/callback
-https://preview.avise.co/api/auth/callback
+https://avise.vercel.app/api/auth/callback
+https://avise-git-editor-draft-hottudoggu1.vercel.app/api/auth/callback
 ```
 GitHub OAuth Apps support multiple registered callback URLs on a single app (confirmed
 — this is not a fine-grained-PAT/GitHub-App-only feature), so **one** OAuth App with
@@ -212,7 +212,7 @@ OAuth testing rather than testing purely against Preview).
    to confirm the first real `draft/ensure` call actually produces a visible Preview
    deployment in the Vercel dashboard.
 2. **Preview URL pattern the editor's "Preview" button should resolve to:**
-   `https://preview.avise.co` (the draft branch's custom domain,
+   `https://avise-git-editor-draft-hottudoggu1.vercel.app` (the stable branch alias,
    same value as `VERCEL_PREVIEW_URL_TEMPLATE`/`PUBLIC_SITE_URL` preview above) — this
    updates in place on every new commit to `editor-draft`, so the same link stays valid
    across saves; no need to look up a per-commit preview URL.
