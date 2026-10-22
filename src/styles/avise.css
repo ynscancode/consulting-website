@@ -106,7 +106,10 @@ a { color: inherit; text-underline-offset: 3px; }
   --hdr-bg: var(--forest); --hdr-fg: var(--paper); --hdr-muted: var(--paper-muted); --hdr-rule: var(--rule-on-dark);
   --hdr-amp: var(--rose); --hdr-cta-bg: var(--rose); --hdr-cta-fg: var(--ink); --hdr-focus: var(--citron);
   background: var(--hdr-bg); color: var(--hdr-fg);
-  transition: background-color .15s ease; }
+  /* 1px of the header's own colour past each edge: at fractional zoom (Safari) the header and
+     the band beside it can round apart, leaving a hairline of the page background between them. */
+  box-shadow: 0 1px 0 var(--hdr-bg), 0 -1px 0 var(--hdr-bg);
+  transition: background-color .15s ease, box-shadow .15s ease; }
 .site-header[data-ground="ink"] { --hdr-bg: var(--ink); }
 .site-header[data-ground="paper"] { --hdr-bg: var(--paper); --hdr-fg: var(--ink); --hdr-muted: var(--ink-muted); --hdr-rule: var(--line); --hdr-amp: var(--forest); --hdr-cta-bg: var(--forest); --hdr-cta-fg: var(--paper); --hdr-focus: var(--ink); }
 .site-header[data-ground="rose"] { --hdr-bg: var(--rose); --hdr-fg: var(--ink); --hdr-muted: var(--ink); --hdr-rule: var(--rule-receipt); --hdr-amp: var(--forest); --hdr-cta-bg: var(--forest); --hdr-cta-fg: var(--paper); --hdr-focus: var(--ink); }
