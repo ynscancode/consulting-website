@@ -112,16 +112,20 @@ vercel env add VERCEL_PREVIEW_URL_TEMPLATE production preview
 # change, not an env-var change) rather than a second hardcoded value.
 ```
 
-`GITHUB_OAUTH_CLIENT_ID` / `GITHUB_OAUTH_CLIENT_SECRET` are also the **same value in
-every environment** — one GitHub OAuth App, not two — see §3b for why, and why they're
-listed separately here.
+`GITHUB_OAUTH_CLIENT_ID` / `GITHUB_OAUTH_CLIENT_SECRET` **differ per environment** —
+one GitHub OAuth App per origin, because an OAuth App accepts only one callback URL
+(see §3b).
 
 ```
-vercel env add GITHUB_OAUTH_CLIENT_ID production preview development
-# value: <Client ID from the OAuth App registered per EDITOR-SETUP.md §2a>
+vercel env add GITHUB_OAUTH_CLIENT_ID production
+# value: <Client ID of the production OAuth App (avise-editor)>
+vercel env add GITHUB_OAUTH_CLIENT_SECRET production
+# value: <Client secret of the same app>
 
-vercel env add GITHUB_OAUTH_CLIENT_SECRET production preview
-# value: <Client secret from the same OAuth App>
+vercel env add GITHUB_OAUTH_CLIENT_ID preview --git-branch editor-draft
+# value: <Client ID of the preview OAuth App (avise-editor-preview)>
+vercel env add GITHUB_OAUTH_CLIENT_SECRET preview --git-branch editor-draft
+# value: <Client secret of the same app>
 ```
 
 ### 3b. `PUBLIC_SITE_URL` and the OAuth callback — differs per environment, and why
@@ -162,18 +166,15 @@ against your installed `vercel` CLI version** (`vercel env add --help`) — if t
 version in use doesn't support `--git-branch`, set this override from the Vercel
 dashboard instead: Project → Settings → Environment Variables → add `PUBLIC_SITE_URL`
 → Preview → "Custom Environment" / branch-specific override for `editor-draft`.
-Same reasoning applies if you also want to scope `GITHUB_OAUTH_CLIENT_ID/SECRET` this
-tightly, though it matters less there since their value doesn't change per branch.
+The preview `GITHUB_OAUTH_CLIENT_ID/SECRET` use the same `editor-draft` scoping, since
+they belong to the OAuth App whose callback is the `editor-draft` origin.
 
-**GitHub OAuth App callback URLs to register (EDITOR-SETUP.md §2a):**
+**GitHub OAuth Apps to register (EDITOR-SETUP.md §2a)** — one callback URL each, since
+GitHub OAuth Apps (unlike GitHub Apps) accept only a single callback URL:
 ```
-https://avise-co.vercel.app/api/auth/callback
-https://avise-git-editor-draft-hottudoggu1.vercel.app/api/auth/callback
+avise-editor          https://avise-co.vercel.app/api/auth/callback
+avise-editor-preview  https://avise-git-editor-draft-hottudoggu1.vercel.app/api/auth/callback
 ```
-GitHub OAuth Apps support multiple registered callback URLs on a single app (confirmed
-— this is not a fine-grained-PAT/GitHub-App-only feature), so **one** OAuth App with
-both URLs registered is correct; no need for two separate OAuth Apps or two sets of
-`GITHUB_OAUTH_CLIENT_ID`/`SECRET`.
 
 ### 3c. `SESSION_SECRET` — generate distinct values per environment
 
@@ -197,10 +198,9 @@ sessions. Rotating either value immediately invalidates all sessions signed with
 
 Not a Vercel env var step — copy `.env.local.example` → `.env.local` (already
 `.gitignore`d) per EDITOR-SETUP.md §2c and fill in real values there for
-`astro dev`/`vercel dev`. `PUBLIC_SITE_URL=http://localhost:4321` locally; GitHub OAuth
-Apps also accept `http://localhost:*` as a registered callback if local OAuth testing
-is wanted, as a third entry alongside the two in §3b (optional, only if doing local
-OAuth testing rather than testing purely against Preview).
+`astro dev`/`vercel dev`. `PUBLIC_SITE_URL=http://localhost:4321` locally; Local OAuth
+testing needs a third OAuth App with callback `http://localhost:4321/api/auth/callback`
+(optional, only if not testing purely against Preview).
 
 ## 4. Preview/publish deploy mechanics — confirm these in Vercel before relying on them
 
@@ -234,7 +234,7 @@ OAuth testing rather than testing purely against Preview).
 
 - **`PUBLIC_SITE_URL`/OAuth-callback mismatch is the main failure mode to watch.** If
   the `editor-draft` branch is ever renamed, or a second draft branch is introduced, ALL
-  of: the OAuth App's second callback URL, `PUBLIC_SITE_URL` (preview scope),
+  of: the preview OAuth App's callback URL, `PUBLIC_SITE_URL` (preview scope),
   `VERCEL_PREVIEW_URL_TEMPLATE`, and `DRAFT_BRANCH` need to move together. None of these
   are derived from each other automatically — a partial update (e.g. `DRAFT_BRANCH`
   changed but the OAuth callback left stale) breaks login on the preview deployment
