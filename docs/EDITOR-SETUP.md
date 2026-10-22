@@ -25,26 +25,26 @@ triggers the normal production deploy.
 Do these once, in order. All values you produce here get set as environment
 variables in step 2c.
 
-### 2a. Register a GitHub OAuth App
+### 2a. Register the GitHub OAuth Apps
+
+A GitHub OAuth App accepts exactly **one** Authorization callback URL, and the
+production site and the draft branch's preview live on different origins. So if you
+want to log in on both, register **two** OAuth Apps and repeat these steps for each:
+
+| App | Homepage URL | Authorization callback URL | Vercel environment for its ID/secret |
+|---|---|---|---|
+| `avise-editor` | `https://avise-co.vercel.app` | `https://avise-co.vercel.app/api/auth/callback` | Production |
+| `avise-editor-preview` | `https://avise-git-editor-draft-hottudoggu1.vercel.app` | `https://avise-git-editor-draft-hottudoggu1.vercel.app/api/auth/callback` | Preview (`editor-draft` branch) |
+
+If you only ever log in on production, the first app is enough.
 
 1. Go to **https://github.com/settings/developers** → **OAuth Apps** → **New OAuth App**.
 2. Fill in:
-   - **Application name:** anything recognizable, e.g. `avise-editor`.
-   - **Homepage URL:** your production site origin, e.g. `https://avise.vercel.app`.
-   - **Authorization callback URL:** `{site origin}/api/auth/callback`. The editor
-     validates the OAuth `state` against a single callback path baked into the code
-     (`/api/auth/callback`), but GitHub OAuth Apps only accept **one fixed set of
-     callback URLs** and Vercel preview deployments get a different origin per
-     deployment — so you need one entry for production and, if you plan to log in
-     on a preview deployment (e.g. the draft branch's own preview URL) rather than
-     always logging in on production, an additional callback URL entry for that
-     preview origin too:
-     - `https://avise.vercel.app/api/auth/callback` (production)
-     - `https://<draft-branch-preview-domain>/api/auth/callback` (preview, if you
-       need to log in there — see the operational note in §2c on how the preview
-       domain is determined)
-   - GitHub OAuth Apps support multiple callback URLs on the same app — add both as
-     separate lines in the "Authorization callback URL" field.
+   - **Application name:** from the table above.
+   - **Homepage URL:** from the table above.
+   - **Authorization callback URL:** `{site origin}/api/auth/callback`, from the table
+     above. It must match `{PUBLIC_SITE_URL}/api/auth/callback` for the environment
+     the app serves, or GitHub rejects the login.
 3. Click **Register application**.
 4. On the app's settings page: copy the **Client ID** shown at the top — this is
    `GITHUB_OAUTH_CLIENT_ID`.
@@ -90,8 +90,8 @@ Two places need these values:
 > **Operational note — Vercel provisioning is out of scope for this document.**
 > The exact `vercel env add` commands, which Vercel **environment** (Production /
 > Preview / Development) each variable belongs to, and how to read off the actual
-> preview-deployment domain pattern for `VERCEL_PREVIEW_URL_TEMPLATE` (needed to
-> complete the second OAuth callback URL in §2a) are the responsibility of the
+> preview-deployment domain pattern for `VERCEL_PREVIEW_URL_TEMPLATE` (needed for the
+> preview OAuth App's callback URL in §2a) are the responsibility of the
 > **Vercel provisioning runbook at [`DEVOPS-VERCEL-RUNBOOK.md`](./DEVOPS-VERCEL-RUNBOOK.md)**.
 > That runbook is the source of truth for the CLI commands — follow it directly
 > rather than re-deriving the commands from this table. This document only tells
@@ -100,11 +100,11 @@ Two places need these values:
 
 | Variable | Purpose | Value / how to get it | Where it's set |
 |---|---|---|---|
-| `GITHUB_OAUTH_CLIENT_ID` | Identifies your OAuth App to GitHub during login | Copied in §2a step 4 | `.env.local` (dev) + Vercel (all environments) |
+| `GITHUB_OAUTH_CLIENT_ID` | Identifies your OAuth App to GitHub during login | Copied in §2a step 4 | `.env.local` (dev) + Vercel (each environment gets its own app's ID) |
 | `GITHUB_OAUTH_CLIENT_SECRET` | Proves the login request came from your app when exchanging the OAuth code | Generated in §2a step 5 | `.env.local` (dev) + Vercel (server-only — never exposed to the browser) |
 | `ADMIN_GITHUB_USERNAME` | The only GitHub login allowed to get an editor session; compared constant-time against the OAuth-resolved user on every login attempt | `ynscancode` | `.env.local` + Vercel |
 | `SESSION_SECRET` | HMAC-signs the session cookie, the OAuth `state` cookie, and the CSRF token. Rotating it instantly invalidates every existing session. | Generate a real high-entropy value, e.g. `openssl rand -base64 32`. Never reuse a value across environments. | `.env.local` (own local value) + Vercel (its own value, ideally different from local) |
-| `PUBLIC_SITE_URL` | Canonical site origin (no trailing slash) — used to build the OAuth redirect URI and validate absolute URLs server-side | `http://localhost:4321` locally; your production origin (e.g. `https://avise.vercel.app`) on Vercel Production | `.env.local` + Vercel |
+| `PUBLIC_SITE_URL` | Canonical site origin (no trailing slash) — used to build the OAuth redirect URI and validate absolute URLs server-side | `http://localhost:4321` locally; your production origin (e.g. `https://avise-co.vercel.app`) on Vercel Production | `.env.local` + Vercel |
 | `GIT_WRITE_TOKEN` | The fine-grained PAT the backend uses to commit/read/delete content files via the GitHub API | Generated in §2b step 6 | `.env.local` (dev) + Vercel (server-only) |
 | `GITHUB_REPO` | `owner/repo` — the single repo the git-write API is allowed to touch | `ynscancode/consulting-website` | `.env.local` + Vercel |
 | `DRAFT_BRANCH` | The branch name the editor commits drafts to; Publish merges this into `master` | `editor-draft` (or whatever the devops runbook / repo actually uses — confirm it matches what's configured, since a mismatch means Save/Publish silently target the wrong branch) | `.env.local` + Vercel |
@@ -120,7 +120,7 @@ ever holds placeholder values — if you ever edit that file, keep it that way.
 ## 3. Day-to-day usage
 
 1. **Log in:** visit `/api/auth/login?redirect_to=/edit` on the site (e.g.
-   `https://avise.vercel.app/api/auth/login?redirect_to=/edit`). You'll be
+   `https://avise-co.vercel.app/api/auth/login?redirect_to=/edit`). You'll be
    redirected to GitHub to authorize, then back to the site, landing directly on
    `/edit`. Log in with `ynscancode` — any other GitHub account is rejected (see
    Security notes). (`redirect_to` is optional — visiting plain `/api/auth/login`
@@ -222,7 +222,7 @@ a broken/empty link. Clearing a filled-in value back out returns it to that
   private browser window) and retry with the correct one. Other possible causes:
   the OAuth callback URL registered on the GitHub OAuth App doesn't match the
   origin you're logging in from (see §2a — production and preview origins each
-  need their own registered callback URL), or `GITHUB_OAUTH_CLIENT_ID` /
+  need their own OAuth App), or `GITHUB_OAUTH_CLIENT_ID` /
   `GITHUB_OAUTH_CLIENT_SECRET` don't match what's registered.
 - **`/edit` (or any `/edit/*` page) 404s even though you're logged in:** the
   session cookie may have expired (sessions last about 8 hours) — log in again at
