@@ -1,12 +1,14 @@
-# Isaiah Ho — Personal Website
+# Avisé & Co. — Website
 
-Personal site for Isaiah Ho (business student, Singapore Management University), live at https://avise-co.vercel.app. A single-page homepage (hero, about, experience, projects, writing, contact), a blog with RSS, and a private inline content editor at `/edit`.
+Website for Avisé & Co., practical strategy for Singapore small businesses, live at https://avise-co.vercel.app. Public pages (home, what we do, how we work, insights, about, contact), built to the Avisé & Co. design system, plus a private inline content editor at `/edit`.
+
+> **Editor status:** the `/edit` editor still edits the previous personal-site content (`site.json`, `experience.json`, `projects.json`, blog) in the previous design. It hasn't been rebuilt for the Avisé pages yet, so publishing from it doesn't change the public site.
 
 ## Tech stack
 
 - **[Astro](https://astro.build)** (static output, no client-side framework). Content lives in JSON data files and Markdown, read through Astro content collections (`src/content.config.ts`) and compiled to static HTML at build time.
 - **Vercel** as the deploy target (via `@astrojs/vercel`). Pushing to `master` deploys production. See [`docs/DEVOPS-VERCEL-RUNBOOK.md`](./docs/DEVOPS-VERCEL-RUNBOOK.md).
-- **Fonts:** the public site loads EB Garamond (display) and Literata (text) from Google Fonts. The editor loads the same fonts.
+- **Fonts:** the public site loads Instrument Serif (display) and Newsreader (text) from Google Fonts, per the Avisé & Co. design system. The editor still loads EB Garamond and Literata.
 - **Inline editor** (`/edit`, GitHub OAuth, server-rendered): edits are saved to an `editor-draft` branch and published by merging into `master`. See [`docs/EDITOR-SETUP.md`](./docs/EDITOR-SETUP.md).
 
 **If you're here to edit content rather than code, use the editor ([`docs/EDITOR-SETUP.md`](./docs/EDITOR-SETUP.md)), or see [`CONTENT-GUIDE.md`](./CONTENT-GUIDE.md) for editing the files directly.**
@@ -29,10 +31,12 @@ There is no test suite and no linter configured. `npx astro check` type-checks t
 
 | Route | What it is |
 |---|---|
-| `/` | Single-page homepage with anchor sections `#about`, `#experience`, `#projects`, `#writing`, `#contact` |
-| `/about`, `/experience`, `/projects`, `/contact` | 301 redirects to the matching homepage anchor (`astro.config.mjs`) |
-| `/experience/<slug>`, `/projects/<slug>` | Detail page per entry |
-| `/blog`, `/blog/<slug>`, `/rss.xml` | Blog listing, posts and feed |
+| `/` | Home: hero receipt, services, self-check, how we work, latest insights |
+| `/services` | What we do (anchors `#svc-profit`, `#svc-ops`, `#svc-market`), pricing FAQ |
+| `/approach` | How we work: five steps and principles |
+| `/insights`, `/insights/<id>` | Insights with sector filter, and one page per analysis |
+| `/about` | About |
+| `/contact` | Free-consult booking form (prototype: requests are not sent anywhere yet) |
 | `/edit/**`, `/api/**` | Inline editor and its API (sign-in required; returns 404 otherwise) |
 
 ## Project structure
@@ -42,7 +46,8 @@ src/
 ├── pages/                     # Routes (see table above)
 │   └── dev-repro/             # DEV-only editor harness (?view=), 404s in production
 ├── data/
-│   ├── site.json              # Hero, about, contact, empty-state text, category order
+│   ├── avise.json             # Public-site content: services, steps, principles, FAQs, insights, self-check
+│   ├── site.json              # (Editor only, previous site) hero, about, contact, empty-state text, category order
 │   ├── experience.json        # Experience entries
 │   └── projects.json          # Project entries
 ├── content/blog/              # Blog posts as Markdown (created when the first post is added)
@@ -51,19 +56,20 @@ src/
 │   ├── SiteLayout.astro       # Public site: <head>/SEO tags, header, footer
 │   └── EditLayout.astro       # Editor (/edit): shell, footer, toolbar slot
 ├── components/
-│   ├── site/                  # Public site sections (Hero, About, ExperienceLedger, ProjectGrid, WritingBand, Contact, …)
+│   ├── site/                  # Public site parts (SiteHeader, SiteFooter, Receipt, Steps, InsightCard, SelfCheck, …)
 │   ├── edit/                  # Editor views, EditHeader, and the editable row/card twins
 │   └── EditorHarness.astro    # Editor toolbar (save, undo/redo, preview, publish)
 ├── styles/
-│   ├── tokens.css             # Design tokens (colours, fonts, widths) for the public site
-│   ├── site.css               # Public site styles
+│   ├── avise.css              # Public site: Avisé & Co. tokens and styles
+│   ├── tokens.css             # Previous design's tokens (editor only)
+│   ├── site.css               # Previous design's styles (editor only)
 │   └── editor.css             # Editor chrome; imports tokens + site
-├── lib/                       # Shared helpers (date formatting, grouping, editor/GitHub/Vercel plumbing)
+├── lib/                       # Shared helpers (Avisé content loader, receipt renderer, editor/GitHub/Vercel plumbing)
 └── middleware.ts              # Editor session gate
 
-astro.config.mjs               # Site URL, Vercel adapter, redirects
-public/                        # Static files (favicon, about photo)
+astro.config.mjs               # Site URL, Vercel adapter
+public/                        # Static files (Avisé favicons, about photo)
 docs/                          # Editor setup and Vercel runbook
 ```
 
-The public site's components take plain data as props, and the pages load the data. The editor renders in the same design and shares `site.css`'s class names, but it imports no public module (`site/` components, `SiteLayout`): the editable markup is written separately in `edit/`, and `editor.css` inlines `tokens.css` and `site.css`. This is by design, so editor work can't change the public build output.
+The public site's components take plain data as props, and the pages load the data. The editor still renders in the previous design and uses `site.css`'s class names, but it imports no public module (`site/` components, `SiteLayout`): the editable markup is written separately in `edit/`, and `editor.css` inlines `tokens.css` and `site.css`. This is by design, so editor work can't change the public build output.

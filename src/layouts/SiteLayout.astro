@@ -1,25 +1,34 @@
 ---
-import '../styles/tokens.css';
-import '../styles/site.css';
+import '../styles/avise.css';
+import SiteHeader from '../components/site/SiteHeader.astro';
+import SiteFooter from '../components/site/SiteFooter.astro';
+import type { NavKey } from '../components/site/SiteHeader.astro';
 
 export type Props = {
-  title: string;
+  /** Page name; omitted on the homepage. */
+  title?: string;
   description: string;
   ogImage?: string;
+  /** Nav item to mark as the current page. */
+  current?: NavKey;
+  /** The footer's "Book a free consult" band; hidden on the contact page. */
+  showCta?: boolean;
 };
 
-const { title, description, ogImage } = Astro.props;
+const { title, description, ogImage, current, showCta = true } = Astro.props;
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
-const siteTitle = `${title} · Isaiah Ho`;
+const siteTitle = title ? `${title} · Avisé & Co.` : 'Avisé & Co. · Practical strategy for Singapore small businesses';
 ---
 
-<html lang="en">
+<html lang="en-SG">
   <head>
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="icon" href="/favicon.ico" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#1e4d37" />
     <meta name="generator" content={Astro.generator} />
 
     <title>{siteTitle}</title>
@@ -28,6 +37,7 @@ const siteTitle = `${title} · Isaiah Ho`;
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Avisé & Co." />
     <meta property="og:title" content={siteTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonicalURL} />
@@ -39,17 +49,20 @@ const siteTitle = `${title} · Isaiah Ho`;
     <meta name="twitter:description" content={description} />
     {ogImage && <meta name="twitter:image" content={new URL(ogImage, Astro.site)} />}
 
-    <link rel="alternate" type="application/rss+xml" title="Isaiah Ho — Blog" href="/rss.xml" />
-
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;0,7..72,600;1,7..72,400&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&display=swap"
     />
   </head>
   <body>
-    <a class="skip-link" href="#main-content">Skip to main content</a>
-    <slot />
+    <a class="skip" href="#main">Skip to content</a>
+    <SiteHeader current={current} />
+    <main id="main">
+      <slot />
+    </main>
+    <SiteFooter showCta={showCta} />
+    <div class="toast" id="toast" role="status" hidden></div>
   </body>
 </html>

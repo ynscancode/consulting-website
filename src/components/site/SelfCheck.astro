@@ -1,0 +1,128 @@
+---
+import Receipt from './Receipt.astro';
+import type { AviseContent } from '../../lib/aviseContent';
+
+export type Props = {
+  symptoms: AviseContent['symptoms'];
+  areas: AviseContent['areas'];
+  findings: AviseContent['findings'];
+};
+
+const { symptoms, areas, findings } = Astro.props;
+
+// Empty state, server-rendered so the receipt is there before the script runs.
+const initial = {
+  title: 'Self-check',
+  number: '0 items',
+  lines: [
+    { l: 'Pick what sounds familiar', v: '', empty: true },
+    { l: 'Free consult', v: 'S$0.00', hl: true },
+  ],
+  finding: 'Not sure? That’s <em>normal.</em>',
+  footer: 'A first read, not a diagnosis.',
+};
+---
+
+<section class="band band--rose on-rose on-light" id="selfcheck">
+  <div class="wrap check-grid">
+    <div>
+      <p class="label">Two-minute self-check</p>
+      <h2 class="d-m" style="margin-top:var(--space-2)">Where does it <em class="em">hurt?</em></h2>
+      <p class="lede" style="margin-top:var(--space-3)">
+        Tap whatever sounds familiar. You don't need to know the cause. Finding it is our job.
+      </p>
+      <div class="options" id="options" role="group" aria-label="Symptoms">
+        {
+          symptoms.map((s) => (
+            <button type="button" class="opt" data-id={s.id} aria-pressed="false">
+              {s.label}
+            </button>
+          ))
+        }
+      </div>
+      <div class="check-actions">
+        <a class="btn btn--forest" href="/contact" id="checkBook">Book a consult about this</a>
+        <button type="button" class="reset" id="checkReset">Clear</button>
+      </div>
+    </div>
+    <Receipt id="checkReceipt" variant="rose" live label="Your self-check receipt" data={initial} />
+  </div>
+  <script type="application/json" id="selfcheckData" set:html={JSON.stringify({ symptoms, areas, findings }).replace(/</g, '\\u003c')} />
+</section>
+
+<script>
+  import { receiptHTML, type ReceiptLine } from '../../lib/receipt';
+  import { PREFILL_KEY } from '../../lib/prefill';
+
+  type Area = 'profit' | 'ops' | 'market';
+  type Symptom = { id: string; label: string; fix: string; area: Area };
+  const data: { symptoms: Symptom[]; areas: Record<Area, string>; findings: Record<Area, string> } = JSON.parse(
+    document.getElementById('selfcheckData')!.textContent!
+  );
+
+  const options = document.getElementById('options')!;
+  const receiptEl = document.getElementById('checkReceipt')!;
+  let picked: Record<string, boolean> = {};
+
+  function chosen(): Symptom[] {
+    return data.symptoms.filter((s) => picked[s.id]);
+  }
+
+  function renderCheck() {
+    const list = chosen();
+    const lines: ReceiptLine[] = list.length
+      ? list.map((s) => ({ l: s.fix, v: data.areas[s.area] }))
+      : [{ l: 'Pick what sounds familiar', v: '', empty: true }];
+    lines.push({ l: 'Free consult', v: 'S$0.00', hl: true });
+    const counts: Partial<Record<Area, number>> = {};
+    list.forEach((s) => {
+      counts[s.area] = (counts[s.area] || 0) + 1;
+    });
+    const areaKeys = Object.keys(counts) as Area[];
+    const top = areaKeys.sort((a, b) => counts[b]! - counts[a]!)[0];
+    const finding = !list.length
+      ? 'Not sure? That’s <em>normal.</em>'
+      : areaKeys.length > 1 && counts[top] === 1
+        ? 'Several threads. We’ll find the <em>knot.</em>'
+        : data.findings[top];
+    receiptEl.innerHTML = receiptHTML({
+      title: 'Self-check',
+      number: list.length + ' item' + (list.length === 1 ? '' : 's'),
+      lines,
+      finding,
+      footer: 'A first read, not a diagnosis.',
+    });
+  }
+
+  options.addEventListener('click', (e) => {
+    const b = (e.target as Element).closest('.opt');
+    if (!b) return;
+    const id = b.getAttribute('data-id')!;
+    picked[id] = !picked[id];
+    b.setAttribute('aria-pressed', String(!!picked[id]));
+    renderCheck();
+  });
+
+  document.getElementById('checkReset')!.addEventListener('click', () => {
+    picked = {};
+    options.querySelectorAll('.opt').forEach((b) => b.setAttribute('aria-pressed', 'false'));
+    renderCheck();
+  });
+
+  // Carry the picks over to the contact form's "What's going on?" field.
+  document.getElementById('checkBook')!.addEventListener('click', () => {
+    const list = chosen();
+    try {
+      if (list.length) {
+        sessionStorage.setItem(
+          PREFILL_KEY,
+          'From the self-check: ' + list.map((s) => s.label.toLowerCase()).join('; ') + '.'
+        );
+      } else {
+        sessionStorage.removeItem(PREFILL_KEY);
+      }
+    } catch {
+      // Storage unavailable (private mode etc.): the link still works, just without the prefill.
+    }
+  });
+</script>
