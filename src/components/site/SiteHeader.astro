@@ -1,11 +1,16 @@
 ---
 export type NavKey = 'services' | 'approach' | 'insights' | 'about';
+export type Ground = 'forest' | 'paper' | 'rose' | 'ink';
 
 export type Props = {
   current?: NavKey;
+  /** Ground of the first band, so the header starts in the right colours before the script runs. */
+  ground?: Ground;
+  /** Contact page: no header call to action at all. */
+  hideCta?: boolean;
 };
 
-const { current } = Astro.props;
+const { current, ground = 'forest', hideCta = false } = Astro.props;
 
 const links: { key: NavKey; href: string; label: string }[] = [
   { key: 'services', href: '/services', label: 'What we do' },
@@ -15,10 +20,10 @@ const links: { key: NavKey; href: string; label: string }[] = [
 ];
 ---
 
-<header class="site-header on-dark">
+<header class="site-header on-dark" data-ground={ground} data-cta={hideCta ? 'none' : 'off'}>
   <div class="wrap header-row">
     <a class="wordmark" href="/" aria-label="Avisé & Co., home">Avisé <span class="amp" aria-hidden="true">&amp;</span> Co.</a>
-    <button class="btn btn--outline btn--sm menu-btn" id="menuBtn" aria-expanded="false" aria-controls="siteNav">Menu</button>
+    <button class="menu-btn" id="menuBtn" aria-expanded="false" aria-controls="siteNav">Menu</button>
     <nav class="nav" id="siteNav" aria-label="Main">
       {
         links.map((link) => (
@@ -27,18 +32,93 @@ const links: { key: NavKey; href: string; label: string }[] = [
           </a>
         ))
       }
-      <a class="btn btn--act btn--sm" href="/contact">Book a free consult</a>
+      <a class="btn btn--act btn--sm nav-cta" href="/contact">Free consult</a>
     </nav>
   </div>
 </header>
 
 <script>
+  // The header has no bar of its own: it takes the ground of the band under its
+  // bottom edge (solid ink while the phone menu is open), shows a hairline once
+  // the page scrolls, and hides its call to action while another "book" button
+  // is on screen, so two act buttons never show at once.
+  const header = document.querySelector<HTMLElement>('.site-header')!;
   const menuBtn = document.getElementById('menuBtn')!;
   const siteNav = document.getElementById('siteNav')!;
+
+  const GROUNDS = ['forest', 'paper', 'rose', 'ink'];
+  function groundAt(y: number): string {
+    for (const band of document.querySelectorAll('.band')) {
+      const r = band.getBoundingClientRect();
+      if (r.height && r.top <= y && r.bottom > y) {
+        const g = GROUNDS.find((name) => band.classList.contains('band--' + name));
+        if (g) return g;
+      }
+    }
+    return 'paper';
+  }
+
+  function updateHeader() {
+    const ground = header.hasAttribute('data-menu') ? 'ink' : groundAt(header.getBoundingClientRect().bottom);
+    header.setAttribute('data-ground', ground);
+    header.toggleAttribute('data-scrolled', (window.scrollY || 0) > 4);
+    document.body.style.setProperty('--safe-bg', 'var(--' + ground + ')');
+  }
+
+  let ticking = false;
+  window.addEventListener(
+    'scroll',
+    () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
+        updateHeader();
+      });
+    },
+    { passive: true }
+  );
+  window.addEventListener('resize', updateHeader);
+  updateHeader();
+
+  /* Call to action: hidden while the home hero's buttons, the self-check's
+     button or the footer's button is in view. The contact page renders it
+     with data-cta="none" and never changes that. */
+  if (header.getAttribute('data-cta') !== 'none') {
+    if ('IntersectionObserver' in window) {
+      const visible = new Map<Element, boolean>();
+      const updateCta = () => {
+        header.setAttribute('data-cta', [...visible.values()].some(Boolean) ? 'off' : 'on');
+      };
+      const watch = (el: Element | null, rootMargin?: string) => {
+        if (!el) return;
+        visible.set(el, false);
+        new IntersectionObserver(
+          (entries) => {
+            visible.set(el, entries[0].isIntersecting);
+            updateCta();
+          },
+          { rootMargin }
+        ).observe(el);
+      };
+      // The hero's row sits right under the header at load, so don't count the header's own strip.
+      watch(document.getElementById('heroCta'), '-72px 0px 0px 0px');
+      watch(document.getElementById('checkBook'));
+      watch(document.querySelector('#ctaBlock .btn'));
+      // Each observer reports once on its own right away; until then the
+      // server-rendered "off" holds, so the button doesn't flash on load.
+      if (!visible.size) updateCta();
+    } else {
+      header.setAttribute('data-cta', 'on');
+    }
+  }
+
   menuBtn.addEventListener('click', () => {
     const open = !siteNav.classList.contains('open');
     siteNav.classList.toggle('open', open);
+    header.toggleAttribute('data-menu', open);
     menuBtn.setAttribute('aria-expanded', String(open));
     menuBtn.textContent = open ? 'Close' : 'Menu';
+    updateHeader();
   });
 </script>
