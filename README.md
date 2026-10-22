@@ -1,6 +1,6 @@
 # Isaiah Ho — Personal Website
 
-Personal site for Isaiah Ho (business student, Singapore Management University), live at https://avise.vercel.app. A single-page homepage (hero, about, experience, projects, writing, contact), a blog with RSS, and a private inline content editor at `/edit`.
+Personal site for Isaiah Ho (business student, Singapore Management University), live at https://avise-inky.vercel.app. A single-page homepage (hero, about, experience, projects, writing, contact), a blog with RSS, and a private inline content editor at `/edit`.
 
 ## Tech stack
 
