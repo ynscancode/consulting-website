@@ -39,9 +39,9 @@ const links: { key: NavKey; href: string; label: string }[] = [
 
 <script>
   // The header has no bar of its own: it takes the ground of the band under its
-  // bottom edge (solid ink while the phone menu is open), shows a hairline once
-  // the page scrolls, and hides its call to action while another "book" button
-  // is on screen, so two act buttons never show at once.
+  // bottom edge (solid ink while the phone menu is open) and hides its call to
+  // action while another "book" button is on screen, so two act buttons never
+  // show at once.
   const header = document.querySelector<HTMLElement>('.site-header')!;
   const menuBtn = document.getElementById('menuBtn')!;
   const siteNav = document.getElementById('siteNav')!;
@@ -61,7 +61,6 @@ const links: { key: NavKey; href: string; label: string }[] = [
   function updateHeader() {
     const ground = header.hasAttribute('data-menu') ? 'ink' : groundAt(header.getBoundingClientRect().bottom);
     header.setAttribute('data-ground', ground);
-    header.toggleAttribute('data-scrolled', (window.scrollY || 0) > 4);
     document.body.style.setProperty('--safe-bg', 'var(--' + ground + ')');
   }
 

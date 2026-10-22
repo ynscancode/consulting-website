@@ -101,16 +101,15 @@ a { color: inherit; text-underline-offset: 3px; }
 .btn-row { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
 
 /* Header: never a separate bar. It takes the colour of whichever band is under it,
-   with a hairline once the page has scrolled. Solid ink only while the phone menu is open. */
+   with no rule along its edge. Solid ink only while the phone menu is open. */
 .site-header { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
   --hdr-bg: var(--forest); --hdr-fg: var(--paper); --hdr-muted: var(--paper-muted); --hdr-rule: var(--rule-on-dark);
   --hdr-amp: var(--rose); --hdr-cta-bg: var(--rose); --hdr-cta-fg: var(--ink); --hdr-focus: var(--citron);
-  background: var(--hdr-bg); color: var(--hdr-fg); border-bottom: var(--stroke-rule) solid transparent;
-  transition: background-color .15s ease, border-color .15s ease; }
+  background: var(--hdr-bg); color: var(--hdr-fg);
+  transition: background-color .15s ease; }
 .site-header[data-ground="ink"] { --hdr-bg: var(--ink); }
 .site-header[data-ground="paper"] { --hdr-bg: var(--paper); --hdr-fg: var(--ink); --hdr-muted: var(--ink-muted); --hdr-rule: var(--line); --hdr-amp: var(--forest); --hdr-cta-bg: var(--forest); --hdr-cta-fg: var(--paper); --hdr-focus: var(--ink); }
 .site-header[data-ground="rose"] { --hdr-bg: var(--rose); --hdr-fg: var(--ink); --hdr-muted: var(--ink); --hdr-rule: var(--rule-receipt); --hdr-amp: var(--forest); --hdr-cta-bg: var(--forest); --hdr-cta-fg: var(--paper); --hdr-focus: var(--ink); }
-.site-header[data-scrolled] { border-bottom-color: var(--hdr-rule); }
 .site-header :focus-visible { outline-color: var(--hdr-focus); }
 .site-header .wordmark { color: var(--hdr-fg); }
 .site-header .wordmark .amp { color: var(--hdr-amp); }
