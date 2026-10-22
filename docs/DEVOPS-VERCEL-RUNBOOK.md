@@ -5,7 +5,7 @@ Source of truth for the `vercel env add` commands referenced from
 [`EDITOR-SETUP.md`](./EDITOR-SETUP.md) §2c. Config-verification + provisioning only —
 no app code in this document.
 
-Project: `isaiah-ho`, team/scope: `hottudoggu1`, repo: `github.com/ynscancode/isaiah-ho`,
+Project: `isaiah-ho`, team/scope: `hottudoggu1`, repo: `github.com/ynscancode/consulting-website`,
 production branch: `master`, draft branch: `editor-draft` (`DRAFT_BRANCH`). Assumes
 `vercel link` has already bound this repo checkout to the `isaiah-ho` project.
 
@@ -86,13 +86,13 @@ vercel env add ADMIN_GITHUB_USERNAME production preview development
 # value: ynscancode
 
 vercel env add GITHUB_REPO production preview development
-# value: ynscancode/isaiah-ho
+# value: ynscancode/consulting-website
 
 vercel env add DRAFT_BRANCH production preview development
 # value: editor-draft
 
 vercel env add GIT_WRITE_TOKEN production preview
-# value: <fine-grained PAT from EDITOR-SETUP.md §2b — Contents R/W, ynscancode/isaiah-ho only>
+# value: <fine-grained PAT from EDITOR-SETUP.md §2b — Contents R/W, ynscancode/consulting-website only>
 # Needed in BOTH production and preview: /edit is prerender=false and ships in every
 # deployment, including the draft branch's own preview build, so a save/publish
 # initiated from the preview deployment's own /edit UI also needs this token

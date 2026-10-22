@@ -66,7 +66,7 @@ repo's file contents.
 1. Go to **https://github.com/settings/personal-access-tokens/new** (fine-grained
    tokens).
 2. **Resource owner:** your account (`ynscancode`).
-3. **Repository access:** "Only select repositories" → select **`ynscancode/isaiah-ho`** only.
+3. **Repository access:** "Only select repositories" → select **`ynscancode/consulting-website`** only.
 4. **Permissions** → **Repository permissions** → **Contents:** set to **Read and write**.
    Leave every other permission at "No access."
 5. Set an expiration (GitHub requires one for fine-grained tokens) and note it
@@ -106,7 +106,7 @@ Two places need these values:
 | `SESSION_SECRET` | HMAC-signs the session cookie, the OAuth `state` cookie, and the CSRF token. Rotating it instantly invalidates every existing session. | Generate a real high-entropy value, e.g. `openssl rand -base64 32`. Never reuse a value across environments. | `.env.local` (own local value) + Vercel (its own value, ideally different from local) |
 | `PUBLIC_SITE_URL` | Canonical site origin (no trailing slash) — used to build the OAuth redirect URI and validate absolute URLs server-side | `http://localhost:4321` locally; your production origin (e.g. `https://isaiah-ho.vercel.app`) on Vercel Production | `.env.local` + Vercel |
 | `GIT_WRITE_TOKEN` | The fine-grained PAT the backend uses to commit/read/delete content files via the GitHub API | Generated in §2b step 6 | `.env.local` (dev) + Vercel (server-only) |
-| `GITHUB_REPO` | `owner/repo` — the single repo the git-write API is allowed to touch | `ynscancode/isaiah-ho` | `.env.local` + Vercel |
+| `GITHUB_REPO` | `owner/repo` — the single repo the git-write API is allowed to touch | `ynscancode/consulting-website` | `.env.local` + Vercel |
 | `DRAFT_BRANCH` | The branch name the editor commits drafts to; Publish merges this into `master` | `editor-draft` (or whatever the devops runbook / repo actually uses — confirm it matches what's configured, since a mismatch means Save/Publish silently target the wrong branch) | `.env.local` + Vercel |
 | `VERCEL_PREVIEW_URL_TEMPLATE` *(optional)* | Template for the draft branch's live preview link shown in the editor's **Preview** button, with a `{branch}` placeholder, e.g. `https://isaiah-ho-git-{branch}-<vercel-scope>.vercel.app` | Devops runbook is the source of truth for the exact pattern — it depends on the Vercel project/team scope. If unset, Preview falls back to a plain GitHub branch URL instead of a real Vercel preview link (still functional, just not a live rendered preview). | Vercel only (not needed locally, since local dev doesn't have preview deployments) |
 
@@ -244,4 +244,4 @@ a broken/empty link. Clearing a filled-in value back out returns it to that
 - **A save fails or the toolbar shows an error status:** check that
   `GIT_WRITE_TOKEN` hasn't expired (fine-grained tokens require an explicit
   expiration — see §2b step 5) and that it still has Contents: Read & write on
-  `ynscancode/isaiah-ho`.
+  `ynscancode/consulting-website`.
