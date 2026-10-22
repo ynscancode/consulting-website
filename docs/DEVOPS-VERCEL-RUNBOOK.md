@@ -9,10 +9,10 @@ Project: `avise`, team/scope: `hottudoggu1`, repo: `github.com/ynscancode/consul
 production branch: `master`, draft branch: `editor-draft` (`DRAFT_BRANCH`). Assumes
 `vercel link` has bound this repo checkout to the `avise` project.
 
-Production domain: `https://avise-inky.vercel.app`. `avise.vercel.app` is already
-assigned to a project on another Vercel team, so Vercel auto-assigned the `-inky`
-suffix when the project was created. The branch aliases still follow
-`avise-git-<branch>-hottudoggu1.vercel.app`.
+Production domain: `https://avise-co.vercel.app`. `avise.vercel.app` is already
+assigned to a project on another Vercel team, so it can't be used here. Vercel's
+auto-assigned `avise-inky.vercel.app` 308-redirects to `avise-co`. The branch aliases
+still follow `avise-git-<branch>-hottudoggu1.vercel.app`.
 
 ## 1. Build/config verification (done, findings below)
 
@@ -132,7 +132,7 @@ backend builds is `{PUBLIC_SITE_URL}/api/auth/callback`, and it must match a cal
 URL actually registered on the GitHub OAuth App, or GitHub rejects the login attempt
 before it ever reaches this app's code.
 
-- **Production:** `PUBLIC_SITE_URL=https://avise-inky.vercel.app`
+- **Production:** `PUBLIC_SITE_URL=https://avise-co.vercel.app`
 - **Preview:** `PUBLIC_SITE_URL=https://avise-git-editor-draft-hottudoggu1.vercel.app`
   — this is Vercel's **stable git-branch alias** for `editor-draft`
   (`<project>-git-<branch-slug>-<team-slug>.vercel.app`), assigned automatically to
@@ -142,7 +142,7 @@ before it ever reaches this app's code.
 
 ```
 vercel env add PUBLIC_SITE_URL production
-# value: https://avise-inky.vercel.app
+# value: https://avise-co.vercel.app
 
 vercel env add PUBLIC_SITE_URL preview --git-branch editor-draft
 # value: https://avise-git-editor-draft-hottudoggu1.vercel.app
@@ -168,7 +168,7 @@ tightly, though it matters less there since their value doesn't change per branc
 
 **GitHub OAuth App callback URLs to register (EDITOR-SETUP.md §2a):**
 ```
-https://avise-inky.vercel.app/api/auth/callback
+https://avise-co.vercel.app/api/auth/callback
 https://avise-git-editor-draft-hottudoggu1.vercel.app/api/auth/callback
 ```
 GitHub OAuth Apps support multiple registered callback URLs on a single app (confirmed

@@ -30,7 +30,7 @@ variables in step 2c.
 1. Go to **https://github.com/settings/developers** → **OAuth Apps** → **New OAuth App**.
 2. Fill in:
    - **Application name:** anything recognizable, e.g. `avise-editor`.
-   - **Homepage URL:** your production site origin, e.g. `https://avise-inky.vercel.app`.
+   - **Homepage URL:** your production site origin, e.g. `https://avise-co.vercel.app`.
    - **Authorization callback URL:** `{site origin}/api/auth/callback`. The editor
      validates the OAuth `state` against a single callback path baked into the code
      (`/api/auth/callback`), but GitHub OAuth Apps only accept **one fixed set of
@@ -39,7 +39,7 @@ variables in step 2c.
      on a preview deployment (e.g. the draft branch's own preview URL) rather than
      always logging in on production, an additional callback URL entry for that
      preview origin too:
-     - `https://avise-inky.vercel.app/api/auth/callback` (production)
+     - `https://avise-co.vercel.app/api/auth/callback` (production)
      - `https://<draft-branch-preview-domain>/api/auth/callback` (preview, if you
        need to log in there — see the operational note in §2c on how the preview
        domain is determined)
@@ -104,7 +104,7 @@ Two places need these values:
 | `GITHUB_OAUTH_CLIENT_SECRET` | Proves the login request came from your app when exchanging the OAuth code | Generated in §2a step 5 | `.env.local` (dev) + Vercel (server-only — never exposed to the browser) |
 | `ADMIN_GITHUB_USERNAME` | The only GitHub login allowed to get an editor session; compared constant-time against the OAuth-resolved user on every login attempt | `ynscancode` | `.env.local` + Vercel |
 | `SESSION_SECRET` | HMAC-signs the session cookie, the OAuth `state` cookie, and the CSRF token. Rotating it instantly invalidates every existing session. | Generate a real high-entropy value, e.g. `openssl rand -base64 32`. Never reuse a value across environments. | `.env.local` (own local value) + Vercel (its own value, ideally different from local) |
-| `PUBLIC_SITE_URL` | Canonical site origin (no trailing slash) — used to build the OAuth redirect URI and validate absolute URLs server-side | `http://localhost:4321` locally; your production origin (e.g. `https://avise-inky.vercel.app`) on Vercel Production | `.env.local` + Vercel |
+| `PUBLIC_SITE_URL` | Canonical site origin (no trailing slash) — used to build the OAuth redirect URI and validate absolute URLs server-side | `http://localhost:4321` locally; your production origin (e.g. `https://avise-co.vercel.app`) on Vercel Production | `.env.local` + Vercel |
 | `GIT_WRITE_TOKEN` | The fine-grained PAT the backend uses to commit/read/delete content files via the GitHub API | Generated in §2b step 6 | `.env.local` (dev) + Vercel (server-only) |
 | `GITHUB_REPO` | `owner/repo` — the single repo the git-write API is allowed to touch | `ynscancode/consulting-website` | `.env.local` + Vercel |
 | `DRAFT_BRANCH` | The branch name the editor commits drafts to; Publish merges this into `master` | `editor-draft` (or whatever the devops runbook / repo actually uses — confirm it matches what's configured, since a mismatch means Save/Publish silently target the wrong branch) | `.env.local` + Vercel |
@@ -120,7 +120,7 @@ ever holds placeholder values — if you ever edit that file, keep it that way.
 ## 3. Day-to-day usage
 
 1. **Log in:** visit `/api/auth/login?redirect_to=/edit` on the site (e.g.
-   `https://avise-inky.vercel.app/api/auth/login?redirect_to=/edit`). You'll be
+   `https://avise-co.vercel.app/api/auth/login?redirect_to=/edit`). You'll be
    redirected to GitHub to authorize, then back to the site, landing directly on
    `/edit`. Log in with `ynscancode` — any other GitHub account is rejected (see
    Security notes). (`redirect_to` is optional — visiting plain `/api/auth/login`
