@@ -59,7 +59,11 @@ const links: { key: NavKey; href: string; label: string }[] = [
   }
 
   function updateHeader() {
-    const ground = header.hasAttribute('data-menu') ? 'ink' : groundAt(header.getBoundingClientRect().bottom);
+    // Sample 1px below the header's bottom edge, not on it: at the top of a page
+    // that edge is exactly where the first band starts, and fractional zoom can
+    // round the two apart so that no band "contains" it (which fell back to paper
+    // on pages that open on forest).
+    const ground = header.hasAttribute('data-menu') ? 'ink' : groundAt(header.getBoundingClientRect().bottom + 1);
     header.setAttribute('data-ground', ground);
     document.body.style.setProperty('--safe-bg', 'var(--' + ground + ')');
   }
@@ -78,6 +82,12 @@ const links: { key: NavKey; href: string; label: string }[] = [
     { passive: true }
   );
   window.addEventListener('resize', updateHeader);
+  // Re-check once layout settles (stylesheets, fonts) and when the page comes
+  // back from the back/forward cache, none of which fire a scroll event.
+  window.addEventListener('load', updateHeader);
+  window.addEventListener('pageshow', updateHeader);
+  document.fonts?.ready.then(updateHeader);
+  if ('ResizeObserver' in window) new ResizeObserver(updateHeader).observe(document.body);
   updateHeader();
 
   /* Call to action: hidden while the home hero's buttons, the self-check's
