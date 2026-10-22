@@ -1,0 +1,18 @@
+---
+export type Props = {
+  items: { q: string; a: string }[];
+};
+
+const { items } = Astro.props;
+---
+
+<div class="faq">
+  {
+    items.map((f) => (
+      <details>
+        <summary>{f.q}</summary>
+        <p>{f.a}</p>
+      </details>
+    ))
+  }
+</div>

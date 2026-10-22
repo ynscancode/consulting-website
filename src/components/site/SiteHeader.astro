@@ -1,30 +1,44 @@
 ---
-// Oxblood header ground. The default slot renders inside the same floor/wrap
-// (the homepage puts the Hero there). `home` picks the link base: on the
-// homepage links are in-page anchors; on subpages they point back to `/#...`.
+export type NavKey = 'services' | 'approach' | 'insights' | 'about';
+
 export type Props = {
-  home?: boolean;
+  current?: NavKey;
 };
 
-const { home = false } = Astro.props;
-const base = home ? '' : '/';
-const links = [
-  { id: 'about', label: 'About' },
-  { id: 'experience', label: 'Experience' },
-  { id: 'projects', label: 'Projects' },
-  { id: 'writing', label: 'Writing' },
-  { id: 'contact', label: 'Contact' },
+const { current } = Astro.props;
+
+const links: { key: NavKey; href: string; label: string }[] = [
+  { key: 'services', href: '/services', label: 'What we do' },
+  { key: 'approach', href: '/approach', label: 'How we work' },
+  { key: 'insights', href: '/insights', label: 'Insights' },
+  { key: 'about', href: '/about', label: 'About' },
 ];
 ---
 
-<div class="dark floor" id="top">
-  <div class="wrap">
-    <header class="site-header">
-      <a class="wordmark u" href={home ? '#top' : '/'}>Isaiah Ho</a>
-      <nav class="nav" aria-label="Sections">
-        {links.map((link) => <a class="u" href={`${base}#${link.id}`}>{link.label}</a>)}
-      </nav>
-    </header>
-    <slot />
+<header class="site-header on-dark">
+  <div class="wrap header-row">
+    <a class="wordmark" href="/" aria-label="Avisé & Co., home">Avisé <span class="amp" aria-hidden="true">&amp;</span> Co.</a>
+    <button class="btn btn--outline btn--sm menu-btn" id="menuBtn" aria-expanded="false" aria-controls="siteNav">Menu</button>
+    <nav class="nav" id="siteNav" aria-label="Main">
+      {
+        links.map((link) => (
+          <a class="nav-link" href={link.href} aria-current={link.key === current ? 'page' : undefined}>
+            {link.label}
+          </a>
+        ))
+      }
+      <a class="btn btn--act btn--sm" href="/contact">Book a free consult</a>
+    </nav>
   </div>
-</div>
+</header>
+
+<script>
+  const menuBtn = document.getElementById('menuBtn')!;
+  const siteNav = document.getElementById('siteNav')!;
+  menuBtn.addEventListener('click', () => {
+    const open = !siteNav.classList.contains('open');
+    siteNav.classList.toggle('open', open);
+    menuBtn.setAttribute('aria-expanded', String(open));
+    menuBtn.textContent = open ? 'Close' : 'Menu';
+  });
+</script>

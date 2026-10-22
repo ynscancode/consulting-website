@@ -1,0 +1,59 @@
+---
+import SiteLayout from '../../layouts/SiteLayout.astro';
+import InsightCard from '../../components/site/InsightCard.astro';
+import { content } from '../../lib/aviseContent';
+
+const { insights, extraSectors } = content;
+const sectors = ['All', ...insights.map((a) => a.sector), ...extraSectors];
+---
+
+<SiteLayout
+  title="Insights"
+  current="insights"
+  description="Singapore small business, read closely. Analyses of local industries and the problems owners bring us. Every figure carries its source."
+>
+  <section class="band band--forest band--tight on-dark">
+    <div class="wrap page-hero">
+      <p class="label">Insights</p>
+      <h1 class="d-xl">Singapore small business, <em class="em">read closely.</em></h1>
+      <p class="lede">Analyses of local industries and the problems owners bring us. Every figure carries its source.</p>
+    </div>
+  </section>
+  <section class="band band--paper on-light">
+    <div class="wrap">
+      <div class="chips" id="chips" role="group" aria-label="Filter by sector">
+        {
+          sectors.map((s) => (
+            <button type="button" class="chip" data-sector={s} aria-pressed={s === 'All' ? 'true' : 'false'}>
+              {s}
+            </button>
+          ))
+        }
+      </div>
+      <div class="cards" id="allCards">
+        {insights.map((a) => <InsightCard insight={a} />)}
+      </div>
+      <p class="empty" id="cardsEmpty" hidden>Nothing in this sector yet. [Next analysis] is in the works.</p>
+    </div>
+  </section>
+</SiteLayout>
+
+<script>
+  const chips = document.getElementById('chips')!;
+  const cards = Array.from(document.querySelectorAll<HTMLElement>('#allCards .card'));
+  const empty = document.getElementById('cardsEmpty')!;
+
+  chips.addEventListener('click', (e) => {
+    const b = (e.target as Element).closest('.chip');
+    if (!b) return;
+    const current = b.getAttribute('data-sector');
+    chips.querySelectorAll('.chip').forEach((c) => c.setAttribute('aria-pressed', String(c === b)));
+    let shown = 0;
+    cards.forEach((card) => {
+      const match = current === 'All' || card.dataset.sector === current;
+      card.hidden = !match;
+      if (match) shown++;
+    });
+    empty.hidden = shown > 0;
+  });
+</script>

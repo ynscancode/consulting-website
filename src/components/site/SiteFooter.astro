@@ -1,8 +1,48 @@
 ---
-// Build-time year (static site), per the redesign brief.
-const year = new Date().getFullYear();
+export type Props = {
+  showCta?: boolean;
+};
+
+const { showCta = true } = Astro.props;
 ---
 
-<footer class="site-footer">
-  <span>&copy; {year} Isaiah Ho</span>
+<footer class="band band--forest on-dark" id="footer">
+  <div class="wrap">
+    {
+      showCta && (
+        <div class="cta-inner">
+          <div class="stack">
+            <h2 class="d-l">
+              Want us to mark up your <em class="em">business?</em>
+            </h2>
+            <p class="lede muted">We read up on you first, then send one short brief. No pitch deck.</p>
+          </div>
+          <a class="btn btn--act" href="/contact">
+            Book a free consult
+          </a>
+        </div>
+      )
+    }
+    <div class="foot">
+      <div class="stack" style="gap:var(--space-2)">
+        <a class="wordmark" href="/" aria-label="Avisé & Co., home">Avisé <span class="amp" aria-hidden="true">&amp;</span> Co.</a>
+        <p class="body-s muted">Practical strategy for Singapore small businesses.</p>
+      </div>
+      <ul>
+        <li><a href="/services">What we do</a></li>
+        <li><a href="/approach">How we work</a></li>
+        <li><a href="/insights">Insights</a></li>
+        <li><a href="/about">About</a></li>
+      </ul>
+      <ul>
+        <li class="muted">Instagram @avise.co</li>
+        <li class="muted">[hello@avise.co]</li>
+        <li class="muted">Singapore</li>
+      </ul>
+    </div>
+    <div class="foot-base">
+      <p class="caption muted">© 2026 [Registered business name]. UEN [number].</p>
+      <p class="caption muted">Prototype. Enquiries are not sent anywhere yet.</p>
+    </div>
+  </div>
 </footer>

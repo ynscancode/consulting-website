@@ -7,11 +7,4 @@ export default defineConfig({
   site: 'https://avise-co.vercel.app',
   output: 'static',
   adapter: vercel(),
-  // The homepage is now a single page with anchor sections.
-  redirects: {
-    '/about': '/#about',
-    '/experience': '/#experience',
-    '/projects': '/#projects',
-    '/contact': '/#contact',
-  },
 });

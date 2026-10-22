@@ -1,0 +1,24 @@
+---
+import type { AviseContent } from '../../lib/aviseContent';
+
+export type Props = {
+  principles: AviseContent['principles'];
+  /** Stack in one column (the About page) instead of the two-column grid. */
+  single?: boolean;
+};
+
+const { principles, single } = Astro.props;
+---
+
+<div class="principles" style={single ? 'grid-template-columns:minmax(0,1fr)' : undefined}>
+  {
+    principles.map((p) => (
+      <div class="principle">
+        <h3 class="d-xs" set:html={p.t} />
+        <p class="body-s" style="color:var(--ink-muted)">
+          {p.b}
+        </p>
+      </div>
+    ))
+  }
+</div>
