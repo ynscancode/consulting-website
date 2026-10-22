@@ -10,9 +10,8 @@ production branch: `master`, draft branch: `editor-draft` (`DRAFT_BRANCH`). Assu
 `vercel link` has bound this repo checkout to the `avise` project.
 
 Production domain: `https://avise-co.vercel.app`. `avise.vercel.app` is already
-assigned to a project on another Vercel team, so it can't be used here. Vercel's
-auto-assigned `avise-inky.vercel.app` 308-redirects to `avise-co`. The branch aliases
-still follow `avise-git-<branch>-hottudoggu1.vercel.app`.
+assigned to a project on another Vercel team, so it can't be used here. The branch
+aliases still follow `avise-git-<branch>-hottudoggu1.vercel.app`.
 
 ## 1. Build/config verification (done, findings below)
 
