@@ -4,7 +4,7 @@ import vercel from '@astrojs/vercel';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://isaiah-ho.vercel.app',
+  site: 'https://avise.co',
   output: 'static',
   adapter: vercel(),
   // The homepage is now a single page with anchor sections.
