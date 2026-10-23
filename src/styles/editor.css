@@ -35,6 +35,9 @@ html[data-edit-mode="editing"] [data-edit].is-editing {
   cursor: text;
 }
 html[data-edit-mode="editing"] .on-dark [data-edit].is-editing { outline-color: var(--citron); }
+/* Safari draws no caret in an editable flex box, which .btn is; a <button>
+   centres its label on its own, so inline-block renders identically. */
+html[data-editing] button.btn[data-edit] { display: inline-block; }
 html[data-edit-mode="editing"] main [data-edit]:not(.is-editing),
 html[data-edit-mode="editing"] footer [data-edit]:not(.is-editing) { cursor: not-allowed; }
 /* An emptied field keeps a visible box while open. */
