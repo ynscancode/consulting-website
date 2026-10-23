@@ -7,7 +7,9 @@ import '../styles/avise.css';
 import '../styles/editor.css';
 import SiteHeader from '../components/site/SiteHeader.astro';
 import SiteFooter from '../components/site/SiteFooter.astro';
+import EditorPanels from '../components/edit/EditorPanels.astro';
 import type { NavKey, Ground } from '../components/site/SiteHeader.astro';
+import { siteContent } from '../lib/editable';
 
 export type Props = {
   title: string;
@@ -19,9 +21,11 @@ export type Props = {
   /** False on screens that aren't a site page (version history). */
   sitePage?: boolean;
   readonly?: boolean;
+  /** An insight's own page (its tab title and description come from its headline and lede). */
+  articlePage?: boolean;
 };
 
-const { title, current, ground = 'forest', showCta = true, page, sitePage = true, readonly = false } = Astro.props;
+const { title, current, ground = 'forest', showCta = true, page, sitePage = true, readonly = false, articlePage = false } = Astro.props;
 const seed = JSON.stringify({ content: Astro.locals.aviseContent, page, readonly }).replace(/</g, '\\u003c');
 ---
 
@@ -43,10 +47,11 @@ const seed = JSON.stringify({ content: Astro.locals.aviseContent, page, readonly
     />
   </head>
   <body>
-    <a class="skip" href="#main">Skip to content</a>
+    <a class="skip" href="#main">{siteContent(Astro.locals).header.skip}</a>
     <SiteHeader current={current} ground={ground} hideCta={!showCta} />
     <main id="main">
       <slot />
+      {sitePage && <EditorPanels page={page === 'insights' && articlePage ? 'article' : page} />}
     </main>
     {sitePage && <SiteFooter showCta={showCta} />}
     <div class="toast" id="toast" role="status" hidden></div>

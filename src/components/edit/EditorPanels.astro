@@ -1,0 +1,50 @@
+---
+// Editor-only band at the foot of every editor page, shown only while choosing
+// a field (see editor.css): text that exists but can't be clicked on the page.
+// The page's browser-tab title and search description, and the site-wide
+// texts that only appear in passing (the phone menu's "Close", the keyboard
+// "Skip to content" link).
+import { siteContent } from '../../lib/editable';
+
+export type Props = {
+  /** Which page's tab title/description to show; "article" for an insight. */
+  page: string;
+};
+
+const { page } = Astro.props;
+const c = siteContent(Astro.locals);
+const meta = (c.meta as Record<string, { title: string; description: string } | undefined>)[page];
+---
+
+<section class="band band--paper on-light band--tight edit-panels" data-edit-only aria-label="Editor-only fields">
+  <div class="wrap">
+    <div class="edit-extra">
+      <p class="edit-extra__title">This page in search results and browser tabs</p>
+      {
+        meta ? (
+          <>
+            <div class="edit-extra__row">
+              <span class="edit-extra__name">Tab title</span>
+              <span data-edit={`meta.${page}.title`} data-edit-kind="text">{meta.title}</span>
+            </div>
+            <div class="edit-extra__row">
+              <span class="edit-extra__name">Search description</span>
+              <span data-edit={`meta.${page}.description`} data-edit-kind="text">{meta.description}</span>
+            </div>
+          </>
+        ) : (
+          <p class="edit-extra__note">An insight's tab title is its headline, and its search description is its lede.</p>
+        )
+      }
+      <p class="edit-extra__title">Site-wide</p>
+      <div class="edit-extra__row">
+        <span class="edit-extra__name">Phone menu, when open</span>
+        <span data-edit="header.close" data-edit-kind="text">{c.header.close}</span>
+      </div>
+      <div class="edit-extra__row">
+        <span class="edit-extra__name">Keyboard "skip" link</span>
+        <span data-edit="header.skip" data-edit-kind="text">{c.header.skip}</span>
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,5 +1,5 @@
 ---
-import { receiptHTML, type ReceiptData } from '../../lib/receipt';
+import { receiptHTML, type ReceiptData, type ReceiptEditMap } from '../../lib/receipt';
 import { isEditing } from '../../lib/editable';
 
 export type Props = {
@@ -9,8 +9,8 @@ export type Props = {
   id?: string;
   label?: string;
   live?: boolean;
-  /** Dot path of `data` in avise.json, for the editor's hooks. */
-  editPath?: string;
+  /** Dot path of `data` in avise.json, or each field's path, for the editor's hooks. */
+  editPath?: string | ReceiptEditMap;
 };
 
 const { data, variant, id, label, live, editPath } = Astro.props;

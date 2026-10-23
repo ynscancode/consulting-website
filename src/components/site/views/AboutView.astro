@@ -1,7 +1,7 @@
 ---
 import Principles from '../Principles.astro';
 import { ed, isEditing, siteContent } from '../../../lib/editable';
-import { escapeHtml, richHtml } from '../../../lib/richText';
+import { escapeHtml, richHtml, textHtml } from '../../../lib/richText';
 
 const L = Astro.locals;
 const c = siteContent(L);
@@ -16,7 +16,7 @@ const photoHtml = imageSrc
 
 <section class="band band--forest band--tight on-dark">
   <div class="wrap page-hero">
-    <p class="label" {...ed(L, 'aboutPage.label')}>{p.label}</p>
+    <p class="label" {...ed(L, 'aboutPage.label')} set:html={textHtml(p.label)} />
     <h1 class="d-xl" {...ed(L, 'aboutPage.headline', 'rich')} set:html={richHtml(p.headline, { emClass: true })} />
   </div>
 </section>
@@ -48,12 +48,8 @@ const photoHtml = imageSrc
     }
     <div class="stack-l">
       <div class="stack">
-        <p class="lede" {...ed(L, 'aboutPage.lede')}>
-          {p.lede}
-        </p>
-        <p class="body-s muted" {...ed(L, 'aboutPage.body')}>
-          {p.body}
-        </p>
+        <p class="lede" {...ed(L, 'aboutPage.lede')} set:html={textHtml(p.lede)} />
+        <p class="body-s muted" {...ed(L, 'aboutPage.body')} set:html={textHtml(p.body)} />
       </div>
       <Principles principles={c.principles} single />
     </div>

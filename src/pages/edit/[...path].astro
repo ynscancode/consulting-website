@@ -88,6 +88,7 @@ const page = pageDef.view === 'article' ? 'insights' : pageDef.view === 'history
   page={page}
   sitePage={pageDef.view !== 'history'}
   readonly={contentSource === 'build'}
+  articlePage={pageDef.view === 'article'}
 >
   {pageDef.view === 'home' && <HomeView />}
   {pageDef.view === 'services' && <ServicesView />}

@@ -29,7 +29,17 @@ const { contentSource } = Astro.props;
     <span id="editor-status-text" role="status" aria-live="polite" data-status="idle">No changes</span>
   </div>
   <div class="editor-toolbar-actions">
-    <button type="button" id="editor-save-btn" class="editor-btn editor-btn-primary" disabled={contentSource === 'build'}>Save to draft</button>
+    <button
+      type="button"
+      id="editor-choose-btn"
+      class="editor-btn editor-btn-icon"
+      aria-pressed="false"
+      aria-label="Edit text"
+      title="Edit text: then click the text you want to change"
+      disabled={contentSource === 'build'}>✎</button
+    >
+    <button type="button" id="editor-cancel-btn" class="editor-btn" hidden>Cancel</button>
+    <button type="button" id="editor-save-btn" class="editor-btn editor-btn-primary" hidden>Save</button>
     <button type="button" id="editor-undo-btn" class="editor-btn" disabled>Undo</button>
     <button type="button" id="editor-redo-btn" class="editor-btn" disabled>Redo</button>
     <button type="button" id="editor-preview-btn" class="editor-btn">Preview</button>
@@ -47,7 +57,6 @@ const { contentSource } = Astro.props;
     pollPreviewStatus,
     publishDraft,
   } from '../lib/editor/client';
-  import { canRedo, canUndo, commitActive, redo, undo } from '../lib/editor/history';
 
   const statusText = document.getElementById('editor-status-text');
   const message = document.getElementById('editor-message');
@@ -59,54 +68,61 @@ const { contentSource } = Astro.props;
   const logoutBtn = document.getElementById('editor-logout-btn');
   const conflictBanner = document.getElementById('editor-conflict-banner');
 
-  // --- Item 5: undo/redo toolbar controls ---
-  // Item 5 design (tech-lead-20260718T082028 / ui-ux-designer-20260718T103000):
-  // buttons stay disabled until the shared history singleton reports a
-  // non-empty stack; undo()/redo() themselves route field application
-  // through the SAME makeAutosaver path each field already uses, so save
-  // failures/stale_form surface exactly like a manual edit (no parallel UI
-  // needed here).
-  function syncHistoryButtons() {
-    if (undoBtn) undoBtn.disabled = !canUndo();
-    if (redoBtn) redoBtn.disabled = !canRedo();
-  }
-  syncHistoryButtons();
-  window.addEventListener('editor:history-changed', syncHistoryButtons);
+  // --- Edit controls: the editing surface (src/lib/editor/surface.ts) owns
+  // the state; the toolbar sends it requests and mirrors what it broadcasts.
+  const chooseBtn = document.getElementById('editor-choose-btn') as HTMLButtonElement | null;
+  const cancelBtn = document.getElementById('editor-cancel-btn') as HTMLButtonElement | null;
+  const historyLink = document.getElementById('editor-history-btn') as HTMLAnchorElement | null;
+  const send = (name: string) => window.dispatchEvent(new CustomEvent(name));
+  // Toolbar buttons must not take focus from the field being edited.
+  [chooseBtn, cancelBtn, saveBtn, undoBtn, redoBtn].forEach((b) => b?.addEventListener('mousedown', (e) => e.preventDefault()));
+  chooseBtn?.addEventListener('click', () => send('editor:toggle-choose'));
+  // Pages without site text (version history) have nothing to choose.
+  if (chooseBtn && !document.getElementById('editorSeed')) chooseBtn.disabled = true;
+  cancelBtn?.addEventListener('click', () => send('editor:cancel-field'));
+  saveBtn?.addEventListener('click', () => send('editor:save-field'));
+  undoBtn?.addEventListener('click', () => send('editor:undo'));
+  redoBtn?.addEventListener('click', () => send('editor:redo'));
 
-  // Bug 2a: commit whatever field is currently focused (if it actually
-  // changed) BEFORE undo()/redo() reads the stack — the mousedown guard
-  // above stops these buttons from stealing focus/blurring the field, so
-  // without this a just-typed, not-yet-committed edit would be skipped by
-  // undo() (which pops an older step instead) and NOT flushed to git (no
-  // per-step save is added here — commitActive() only pushes an in-memory
-  // history step, same as a normal blur would have).
-  undoBtn?.addEventListener('click', () => {
-    commitActive();
-    undo();
-  });
-  redoBtn?.addEventListener('click', () => {
-    commitActive();
-    redo();
-  });
-
-  // Nice-to-have keyboard shortcuts (ui-ux-designer-20260718T103000): only
-  // fire when focus is OUTSIDE an input/textarea/contenteditable, so the
-  // browser's native in-field keystroke undo is never shadowed.
-  window.addEventListener('keydown', (event) => {
-    if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 'z') return;
-    const active = document.activeElement;
-    const tag = active?.tagName;
-    const isEditable =
-      tag === 'INPUT' ||
-      tag === 'TEXTAREA' ||
-      (active instanceof HTMLElement && active.isContentEditable);
-    if (isEditable) return;
-    event.preventDefault();
-    if (event.shiftKey) {
-      redo();
-    } else {
-      undo();
+  let editMode = 'viewing';
+  window.addEventListener('editor:state', (event) => {
+    const d = (event as CustomEvent<{ mode: string; saving: boolean; canUndo: boolean; canRedo: boolean }>).detail;
+    editMode = d.mode;
+    const editing = d.mode === 'editing';
+    if (chooseBtn) {
+      chooseBtn.hidden = editing;
+      chooseBtn.setAttribute('aria-pressed', String(d.mode === 'choosing'));
     }
+    if (cancelBtn) {
+      cancelBtn.hidden = !editing;
+      cancelBtn.disabled = d.saving;
+    }
+    if (saveBtn) {
+      saveBtn.hidden = !editing;
+      saveBtn.disabled = d.saving;
+    }
+    if (undoBtn) undoBtn.disabled = editing || d.saving || !d.canUndo;
+    if (redoBtn) redoBtn.disabled = editing || d.saving || !d.canRedo;
+    // One thing at a time: nothing else while a field is open.
+    [previewBtn, publishBtn, logoutBtn].forEach((b) => {
+      if (b) (b as HTMLButtonElement).disabled = editing;
+    });
+    if (historyLink) historyLink.toggleAttribute('aria-disabled', editing);
+  });
+  send('editor:state-request'); // in case the editor broadcast before this listened
+  historyLink?.addEventListener('click', (event) => {
+    if (historyLink.hasAttribute('aria-disabled')) event.preventDefault();
+  });
+  window.addEventListener('editor:message', (event) => {
+    setMessage((event as CustomEvent<{ text: string }>).detail.text);
+  });
+
+  // Ctrl/Cmd+Z / Shift+Z for undo/redo, except while a field is open (the
+  // browser's own undo works inside it then).
+  window.addEventListener('keydown', (event) => {
+    if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 'z' || editMode === 'editing') return;
+    event.preventDefault();
+    send(event.shiftKey ? 'editor:redo' : 'editor:undo');
   });
 
   function setMessage(text: string) {
@@ -119,7 +135,6 @@ const { contentSource } = Astro.props;
   // <html> so any editor-only affordance elsewhere can key off it too.
   if (document.getElementById('editor-readonly-banner')) {
     document.documentElement.dataset.editorReadonly = 'true';
-    if (saveBtn) saveBtn.disabled = true;
   }
 
   // RC1 draft-sync conflict banner (tech-lead-20260717T090321 Decision 1 /
@@ -135,12 +150,6 @@ const { contentSource } = Astro.props;
     } else {
       conflictBanner.setAttribute('hidden', '');
     }
-  });
-
-  // Views (EditHome/EditAbout/etc.) update this element's data-status /
-  // textContent directly and listen for `editor:save-all`.
-  saveBtn?.addEventListener('click', () => {
-    window.dispatchEvent(new CustomEvent('editor:save-all'));
   });
 
   // --- Item B: preview build freshness/timing (tech-lead-20260720T051536) ---
@@ -297,8 +306,7 @@ const { contentSource } = Astro.props;
     }
   });
 
-  // Fired by makeAutosaver() (src/lib/editor/client.ts) whenever a save gets
-  // back the server's stale_form contract (409 — RC3 baseImage guard, see
+  // Fired by the editor whenever a save gets back the server's stale_form contract (409 — RC3 baseImage guard, see
   // senior-backend-dev-20260717T180600 / tech-lead-20260718T041814 D3): the
   // page's view of the draft is out of date and a background save was
   // rejected rather than risking clobbering a newer draft. NEVER auto-reload

@@ -1,8 +1,11 @@
 ---
+import { content } from '../lib/aviseContent';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import HomeView from '../components/site/views/HomeView.astro';
+
+const { meta } = content;
 ---
 
-<SiteLayout description="Practical strategy for Singapore small businesses. We do the homework on your business first, then bring you one thing you did not already know.">
+<SiteLayout title={meta.home.title} description={meta.home.description}>
   <HomeView />
 </SiteLayout>

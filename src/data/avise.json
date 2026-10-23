@@ -1,6 +1,41 @@
 {
+  "meta": {
+    "home": {
+      "title": "Avisé & Co. · Practical strategy for Singapore small businesses",
+      "description": "Practical strategy for Singapore small businesses. We do the homework on your business first, then bring you one thing you did not already know."
+    },
+    "services": {
+      "title": "What we do · Avisé & Co.",
+      "description": "Strategy you can actually use. Three areas, each scoped to a clear deliverable you can run without us."
+    },
+    "approach": {
+      "title": "How we work · Avisé & Co.",
+      "description": "Find the real problem, then fix it. We work back from the symptom to the cause before we suggest anything."
+    },
+    "insights": {
+      "title": "Insights · Avisé & Co.",
+      "description": "Singapore small business, read closely. Analyses of local industries and the problems owners bring us. Every figure carries its source."
+    },
+    "about": {
+      "title": "About · Avisé & Co.",
+      "description": "Who you'd be hiring: Avisé & Co., practical strategy for Singapore small businesses."
+    },
+    "contact": {
+      "title": "Book a free consult · Avisé & Co.",
+      "description": "Tell us what's wrong. Any problem. We read up on you first, then spend the free video call on what we found."
+    }
+  },
   "header": {
-    "cta": "Free consult"
+    "cta": "Free consult",
+    "nav": {
+      "services": "What we do",
+      "approach": "How we work",
+      "insights": "Insights",
+      "about": "About"
+    },
+    "menu": "Menu",
+    "close": "Close",
+    "skip": "Skip to content"
   },
   "footer": {
     "ctaHeadline": "Want us to mark up your <em>business?</em>",
@@ -36,7 +71,16 @@
       "headline": "Where does it <em>hurt?</em>",
       "lede": "Tap whatever sounds familiar. You don't need to know the cause. Finding it is our job.",
       "book": "Book a consult about this",
-      "clear": "Clear"
+      "clear": "Clear",
+      "receiptTitle": "Self-check",
+      "countOne": "1 item",
+      "countMany": "{n} items",
+      "emptyLine": "Pick what sounds familiar",
+      "consultLine": "Free consult",
+      "consultValue": "S$0.00",
+      "findingEmpty": "Not sure? That’s <em>normal.</em>",
+      "findingMixed": "Several threads. We’ll find the <em>knot.</em>",
+      "receiptFooter": "A first read, not a diagnosis."
     },
     "how": {
       "label": "How we work",
@@ -84,7 +128,8 @@
     "empty": "Nothing in this sector yet. [Next analysis] is in the works.",
     "cardFooter": "Read the analysis →  ·  draft, figures pending",
     "back": "← All insights",
-    "draftNote": "Draft. Figures in [brackets] are placeholders until the analysis is done."
+    "draftNote": "Draft. Figures in [brackets] are placeholders until the analysis is done.",
+    "chipAll": "All"
   },
   "aboutPage": {
     "label": "About",
@@ -116,7 +161,45 @@
       "We read up on your business before the call",
       "On the call, we name the likely cause and the ways to fix it",
       "If a project makes sense, we send one short brief and a quote"
-    ]
+    ],
+    "typeChoose": "Choose one",
+    "businessTypes": [
+      "Retail",
+      "Thrift and vintage",
+      "F&B",
+      "Beauty and wellness",
+      "Services and studios",
+      "Online or D2C",
+      "Something else"
+    ],
+    "contactPlaceholder": "you@shop.sg or @yourshop",
+    "errors": {
+      "name": "Add your name so we know who to ask for.",
+      "biz": "Add your business name. We read up on it before the call.",
+      "type": "Choose the closest type. \"Something else\" is fine.",
+      "contact": "Add an email or Instagram handle so we can confirm the time.",
+      "contactFormat": "That doesn’t look like an email or a handle. Try you@shop.sg or @yourshop.",
+      "problem": "Tell us a little more. One or two sentences is enough.",
+      "slot": "Pick a time that suits you."
+    },
+    "confirm": {
+      "label": "Request received",
+      "headline": "Thanks, {name}. We’ll do our <em>homework.</em>",
+      "body": "We’ll confirm your slot by {channel} within [one working day].",
+      "channelEmail": "email",
+      "channelDm": "Instagram DM",
+      "lineBusiness": "Business",
+      "lineType": "Type",
+      "lineCall": "Call",
+      "lineAbout": "About",
+      "lineCost": "Cost to you",
+      "costValue": "S$0.00",
+      "finding": "See you on the <em>call.</em>",
+      "footer": "Prototype: this request was not sent.",
+      "again": "Start another request"
+    },
+    "toastCopied": "Copied {handle}",
+    "toastSelected": "Selected. Copy it with your keyboard."
   },
   "heroReceipt": {
     "number": "No. 0001",

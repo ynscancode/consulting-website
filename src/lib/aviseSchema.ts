@@ -41,8 +41,19 @@ export const insightIdSchema = z
   .max(80)
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'id must be lowercase letters, digits and hyphens');
 
+const meta = z.object({ title: text(200), description: text(500) });
+
 export const aviseSchema = z.object({
-  header: z.object({ cta: text(60) }),
+  // Browser-tab title and search description per page (an insight's come from
+  // its own headline and lede).
+  meta: z.object({ home: meta, services: meta, approach: meta, insights: meta, about: meta, contact: meta }),
+  header: z.object({
+    cta: text(60),
+    nav: z.object({ services: text(60), approach: text(60), insights: text(60), about: text(60) }),
+    menu: text(40),
+    close: text(40),
+    skip: text(80),
+  }),
   footer: z.object({
     ctaHeadline: text(300),
     ctaLede: text(),
@@ -74,6 +85,16 @@ export const aviseSchema = z.object({
       lede: text(),
       book: text(80),
       clear: text(40),
+      // The result receipt, built in the browser as options are picked.
+      receiptTitle: text(80),
+      countOne: text(40),
+      countMany: text(40), // "{n}" is replaced by the count
+      emptyLine: text(120),
+      consultLine: text(80),
+      consultValue: text(40),
+      findingEmpty: text(300),
+      findingMixed: text(300),
+      receiptFooter: text(200),
     }),
     how: z.object({ label: text(200), headline: text(300), lede: text(), button: text(60) }),
     insights: z.object({ label: text(200), headline: text(300), link: text(60) }),
@@ -109,6 +130,7 @@ export const aviseSchema = z.object({
     cardFooter: text(200),
     back: text(80),
     draftNote: text(300),
+    chipAll: text(40),
   }),
   aboutPage: z.object({
     label: text(200),
@@ -141,6 +163,37 @@ export const aviseSchema = z.object({
     messageBody: text(),
     nextLabel: text(120),
     next: lines(8),
+    typeChoose: text(80),
+    businessTypes: lines(20),
+    contactPlaceholder: text(120),
+    errors: z.object({
+      name: text(300),
+      biz: text(300),
+      type: text(300),
+      contact: text(300),
+      contactFormat: text(300),
+      problem: text(300),
+      slot: text(300),
+    }),
+    // Shown after the form is sent. "{name}" and "{channel}" are filled in.
+    confirm: z.object({
+      label: text(120),
+      headline: text(300),
+      body: text(500),
+      channelEmail: text(60),
+      channelDm: text(60),
+      lineBusiness: text(60),
+      lineType: text(60),
+      lineCall: text(60),
+      lineAbout: text(60),
+      lineCost: text(60),
+      costValue: text(40),
+      finding: text(300),
+      footer: text(300),
+      again: text(80),
+    }),
+    toastCopied: text(120), // "{handle}" is filled in
+    toastSelected: text(200),
   }),
   heroReceipt: receipt,
   // Fixed set of three: ids drive the /services anchors and the self-check areas.
