@@ -114,6 +114,8 @@ function start(seed: Seed) {
 
   function showValue(path: string, value: string) {
     copiesOf(path).forEach((el) => writeEl(el, value));
+    // For page scripts that draw from a field (the contact page's slots).
+    window.dispatchEvent(new CustomEvent('editor:value', { detail: { path, value } }));
   }
 
   function setCaretFromPoint(x: number, y: number) {
