@@ -6,7 +6,7 @@ The editor at `/edit` is the live site itself: the same page components render f
 
 ## Tech stack
 
-- **[Astro](https://astro.build)** (static output, no client-side framework). Content lives in JSON data files and Markdown, read through Astro content collections (`src/content.config.ts`) and compiled to static HTML at build time.
+- **[Astro](https://astro.build)** (static output, no client-side framework). All content lives in one JSON file (`src/data/avise.json`), validated at build time and compiled to static HTML.
 - **Vercel** as the deploy target (via `@astrojs/vercel`). Pushing to `master` deploys production. See [`docs/DEVOPS-VERCEL-RUNBOOK.md`](./docs/DEVOPS-VERCEL-RUNBOOK.md).
 - **Fonts:** Instrument Serif (display) and Newsreader (text) from Google Fonts, per the Avisé & Co. design system, on the site and in the editor.
 - **Inline editor** (`/edit`, GitHub OAuth, server-rendered): edits are saved to an `editor-draft` branch and published by merging into `master`. See [`docs/EDITOR-SETUP.md`](./docs/EDITOR-SETUP.md).
@@ -45,11 +45,7 @@ There is no test suite and no linter configured. `npx astro check` type-checks t
 src/
 ├── pages/                     # Routes (see table above); each page is a thin wrapper around a view
 ├── data/
-│   ├── avise.json             # All public-site content: page copy, services, steps, FAQs, insights, receipts, footer
-│   ├── site.json              # Previous personal site (unused)
-│   ├── experience.json        # Previous personal site (unused)
-│   └── projects.json          # Previous personal site (unused)
-├── content.config.ts          # Collection schemas for the previous site's files (unused by the pages)
+│   └── avise.json             # All site content: page copy, services, steps, FAQs, insights, receipts, footer
 ├── layouts/
 │   ├── SiteLayout.astro       # Public site: <head>/SEO tags, header, footer
 │   └── EditLayout.astro       # Editor (/edit): same header/footer, plus toolbar and editor styles
