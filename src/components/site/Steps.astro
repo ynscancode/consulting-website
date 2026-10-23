@@ -1,4 +1,5 @@
 ---
+import { textHtml } from '../../lib/richText';
 import { ed, edItem, edList } from '../../lib/editable';
 import type { AviseContent } from '../../lib/aviseContent';
 
@@ -16,9 +17,9 @@ const L = Astro.locals;
       <li {...edItem(L, i)}>
         <span class="steps__num" aria-hidden="true">{i + 1}</span>
         <span class="steps__text">
-          <span class="steps__title" {...ed(L, `steps.${i}.t`)}>{s.t}</span>
-          <span class="steps__body" {...ed(L, `steps.${i}.b`)}>{s.b}</span>
-          {s.tag && <span class="steps__tag" {...ed(L, `steps.${i}.tag`)}>{s.tag}</span>}
+          <span class="steps__title" {...ed(L, `steps.${i}.t`)} set:html={textHtml(s.t)} />
+          <span class="steps__body" {...ed(L, `steps.${i}.b`)} set:html={textHtml(s.b)} />
+          {s.tag && <span class="steps__tag" {...ed(L, `steps.${i}.tag`)} set:html={textHtml(s.tag)} />}
         </span>
       </li>
     ))

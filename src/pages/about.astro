@@ -1,8 +1,15 @@
 ---
+import { content } from '../lib/aviseContent';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import AboutView from '../components/site/views/AboutView.astro';
+
+const { meta } = content;
 ---
 
-<SiteLayout title="About" current="about" description="Who you'd be hiring: Avisé & Co., practical strategy for Singapore small businesses.">
+<SiteLayout
+  title={meta.about.title}
+  description={meta.about.description}
+  current="about"
+>
   <AboutView />
 </SiteLayout>

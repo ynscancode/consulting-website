@@ -1,30 +1,21 @@
 ---
 import Faq from '../Faq.astro';
-import { ed, edItem, edList, siteContent } from '../../../lib/editable';
-import { richHtml } from '../../../lib/richText';
+import { ed, edItem, edList, isEditing, siteContent } from '../../../lib/editable';
+import { richHtml, textHtml } from '../../../lib/richText';
 
 const L = Astro.locals;
 const c = siteContent(L);
 const p = c.contactPage;
 
-const businessTypes = [
-  'Retail',
-  'Thrift and vintage',
-  'F&B',
-  'Beauty and wellness',
-  'Services and studios',
-  'Online or D2C',
-  'Something else',
-];
+const editing = isEditing(L);
+const c2 = { errors: p.errors, confirm: p.confirm, toastCopied: p.toastCopied, toastSelected: p.toastSelected };
 ---
 
 <section class="band band--forest band--tight on-dark">
   <div class="wrap page-hero">
-    <p class="label" {...ed(L, 'contactPage.label')}>{p.label}</p>
+    <p class="label" {...ed(L, 'contactPage.label')} set:html={textHtml(p.label)} />
     <h1 class="d-xl" {...ed(L, 'contactPage.headline', 'rich')} set:html={richHtml(p.headline, { emClass: true })} />
-    <p class="lede" {...ed(L, 'contactPage.lede')}>
-      {p.lede}
-    </p>
+    <p class="lede" {...ed(L, 'contactPage.lede')} set:html={textHtml(p.lede)} />
   </div>
 </section>
 <section class="band band--paper on-light">
@@ -33,70 +24,151 @@ const businessTypes = [
       <form id="consultForm" novalidate>
         <div class="field-row">
           <div class="field" id="f-name">
-            <label for="name" {...ed(L, 'contactPage.nameLabel')}>{p.nameLabel}</label>
+            <label for="name" {...ed(L, 'contactPage.nameLabel')} set:html={textHtml(p.nameLabel)} />
             <input id="name" name="name" autocomplete="name" />
             <span class="err" hidden></span>
           </div>
           <div class="field" id="f-biz">
-            <label for="biz" {...ed(L, 'contactPage.bizLabel')}>{p.bizLabel}</label>
+            <label for="biz" {...ed(L, 'contactPage.bizLabel')} set:html={textHtml(p.bizLabel)} />
             <input id="biz" name="biz" autocomplete="organization" />
             <span class="err" hidden></span>
           </div>
         </div>
         <div class="field-row">
           <div class="field" id="f-type">
-            <label for="type" {...ed(L, 'contactPage.typeLabel')}>{p.typeLabel}</label>
+            <label for="type" {...ed(L, 'contactPage.typeLabel')} set:html={textHtml(p.typeLabel)} />
             <select id="type" name="type">
-              <option value="">Choose one</option>
-              {businessTypes.map((t) => <option>{t}</option>)}
+              <option value="">{p.typeChoose}</option>
+              {p.businessTypes.map((t) => <option>{t}</option>)}
             </select>
             <span class="err" hidden></span>
           </div>
           <div class="field" id="f-contact">
-            <label for="contact" {...ed(L, 'contactPage.contactLabel')}>{p.contactLabel}</label>
-            <input id="contact" name="contact" autocomplete="email" placeholder="you@shop.sg or @yourshop" />
+            <label for="contact" {...ed(L, 'contactPage.contactLabel')} set:html={textHtml(p.contactLabel)} />
+            <input id="contact" name="contact" autocomplete="email" placeholder={p.contactPlaceholder} />
             <span class="err" hidden></span>
           </div>
         </div>
         <div class="field" id="f-problem">
-          <label for="problem" {...ed(L, 'contactPage.problemLabel')}>{p.problemLabel}</label>
-          <span class="hint" {...ed(L, 'contactPage.problemHint')}>{p.problemHint}</span>
+          <label for="problem" {...ed(L, 'contactPage.problemLabel')} set:html={textHtml(p.problemLabel)} />
+          <span class="hint" {...ed(L, 'contactPage.problemHint')} set:html={textHtml(p.problemHint)} />
           <textarea id="problem" name="problem"></textarea>
           <span class="err" hidden></span>
         </div>
         <fieldset class="field" id="f-slot">
-          <legend {...ed(L, 'contactPage.slotLegend')}>{p.slotLegend}</legend>
-          <span class="hint" {...ed(L, 'contactPage.slotHint')}>{p.slotHint}</span>
+          <legend {...ed(L, 'contactPage.slotLegend')} set:html={textHtml(p.slotLegend)} />
+          <span class="hint" {...ed(L, 'contactPage.slotHint')} set:html={textHtml(p.slotHint)} />
           <div class="slots" id="slots" role="radiogroup" aria-label="Available times"></div>
           <span class="err" hidden></span>
         </fieldset>
         <div class="btn-row">
-          <button class="btn btn--forest" type="submit" {...ed(L, 'contactPage.submit')}>{p.submit}</button>
-          <span class="caption" style="color:var(--ink-muted)" {...ed(L, 'contactPage.submitNote')}>{p.submitNote}</span>
+          <button class="btn btn--forest" type="submit" {...ed(L, 'contactPage.submit')} set:html={textHtml(p.submit)} />
+          <span class="caption" style="color:var(--ink-muted)" {...ed(L, 'contactPage.submitNote')} set:html={textHtml(p.submitNote)} />
         </div>
       </form>
     </div>
     <aside class="aside">
       <div class="stack">
-        <p class="label" {...ed(L, 'contactPage.messageLabel')}>{p.messageLabel}</p>
-        <div class="handle"><code {...ed(L, 'contactPage.handle')}>{p.handle}</code><button class="copy-btn" type="button" id="copyHandle" {...ed(L, 'contactPage.copyButton')}>{p.copyButton}</button></div>
-        <p class="body-s muted" {...ed(L, 'contactPage.messageBody')}>{p.messageBody}</p>
+        <p class="label" {...ed(L, 'contactPage.messageLabel')} set:html={textHtml(p.messageLabel)} />
+        <div class="handle"><code {...ed(L, 'contactPage.handle')} set:html={textHtml(p.handle)} /><button class="copy-btn" type="button" id="copyHandle" {...ed(L, 'contactPage.copyButton')} set:html={textHtml(p.copyButton)} /></div>
+        <p class="body-s muted" {...ed(L, 'contactPage.messageBody')} set:html={textHtml(p.messageBody)} />
       </div>
       <div class="stack">
-        <p class="label" {...ed(L, 'contactPage.nextLabel')}>{p.nextLabel}</p>
+        <p class="label" {...ed(L, 'contactPage.nextLabel')} set:html={textHtml(p.nextLabel)} />
         <ul class="ticks" {...edList(L, 'contactPage.next')}>
-          {p.next.map((item, i) => <li {...edItem(L, i)} {...ed(L, `contactPage.next.${i}`)}>{item}</li>)}
+          {p.next.map((item, i) => <li {...edItem(L, i)} {...ed(L, `contactPage.next.${i}`)} set:html={textHtml(item)} />)}
         </ul>
       </div>
       <Faq items={c.faqContact} path="faqContact" />
+      {
+        editing && (
+          <div class="edit-extra" data-edit-extra>
+            <p class="edit-extra__title">Form options (not editable on the page)</p>
+            <div class="edit-extra__row">
+              <label>First choice: <span data-edit="contactPage.typeChoose" data-edit-kind="text">{p.typeChoose}</span></label>
+              <label>Placeholder: <span data-edit="contactPage.contactPlaceholder" data-edit-kind="text">{p.contactPlaceholder}</span></label>
+            </div>
+            <p class="edit-extra__note">Business types:</p>
+            <ul class="edit-extra__list" data-edit-list="contactPage.businessTypes">
+              {p.businessTypes.map((t, i) => (
+                <li data-edit-item={String(i)}>
+                  <span data-edit={`contactPage.businessTypes.${i}`} data-edit-kind="text">{t}</span>
+                </li>
+              ))}
+            </ul>
+            <p class="edit-extra__title">Messages shown when the form is used</p>
+            {(
+              [
+                ['name', 'Name missing'],
+                ['biz', 'Business name missing'],
+                ['type', 'Type not chosen'],
+                ['contact', 'Email or handle missing'],
+                ['contactFormat', 'Email or handle not valid'],
+                ['problem', 'Description too short'],
+                ['slot', 'No time picked'],
+              ] as const
+            ).map(([key, label]) => (
+              <div class="edit-extra__row">
+                <span class="edit-extra__name">{label}</span>
+                <span data-edit={`contactPage.errors.${key}`} data-edit-kind="text">{p.errors[key]}</span>
+              </div>
+            ))}
+            <p class="edit-extra__title">After sending ({'{name}'} and {'{channel}'} are filled in)</p>
+            {(
+              [
+                ['label', 'Label', 'text'],
+                ['headline', 'Headline', 'rich'],
+                ['body', 'Line under it', 'text'],
+                ['channelEmail', 'Channel: email', 'text'],
+                ['channelDm', 'Channel: Instagram', 'text'],
+                ['lineBusiness', 'Receipt: business', 'text'],
+                ['lineType', 'Receipt: type', 'text'],
+                ['lineCall', 'Receipt: call', 'text'],
+                ['lineAbout', 'Receipt: about', 'text'],
+                ['lineCost', 'Receipt: cost', 'text'],
+                ['costValue', 'Receipt: cost value', 'text'],
+                ['finding', 'Receipt: finding', 'rich'],
+                ['footer', 'Receipt: footer', 'text'],
+                ['again', 'Button', 'text'],
+              ] as const
+            ).map(([key, label, kind]) => (
+              <div class="edit-extra__row">
+                <span class="edit-extra__name">{label}</span>
+                {kind === 'rich' ? (
+                  <span data-edit={`contactPage.confirm.${key}`} data-edit-kind="rich" set:html={richHtml(p.confirm[key])} />
+                ) : (
+                  <span data-edit={`contactPage.confirm.${key}`} data-edit-kind="text">{p.confirm[key]}</span>
+                )}
+              </div>
+            ))}
+            <p class="edit-extra__title">Copy-handle messages ({'{handle}'} is filled in)</p>
+            <div class="edit-extra__row">
+              <span class="edit-extra__name">Copied</span>
+              <span data-edit="contactPage.toastCopied" data-edit-kind="text">{p.toastCopied}</span>
+            </div>
+            <div class="edit-extra__row">
+              <span class="edit-extra__name">Couldn't copy</span>
+              <span data-edit="contactPage.toastSelected" data-edit-kind="text">{p.toastSelected}</span>
+            </div>
+          </div>
+        )
+      }
     </aside>
+    <script type="application/json" id="contactData" set:html={JSON.stringify(c2).replace(/</g, '\\u003c')} />
   </div>
 </section>
 
 <script>
   import { receiptHTML, escapeHtml } from '../../../lib/receipt';
+  import { fill, richHtml } from '../../../lib/richText';
   import { PREFILL_KEY } from '../../../lib/prefill';
 
+  const msg = JSON.parse(document.getElementById('contactData')!.textContent!) as {
+    errors: Record<'name' | 'biz' | 'type' | 'contact' | 'contactFormat' | 'problem' | 'slot', string>;
+    confirm: Record<string, string>;
+    toastCopied: string;
+    toastSelected: string;
+  };
   const $ = <T extends Element = HTMLElement>(s: string, r: ParentNode = document) => r.querySelector<T>(s)!;
   const $$ = (s: string, r: ParentNode = document) => Array.from(r.querySelectorAll<HTMLElement>(s));
 
@@ -163,15 +235,15 @@ const businessTypes = [
       setErr(id, msg);
       if (!firstBad) firstBad = id;
     };
-    if (!v.name) bad('f-name', 'Add your name so we know who to ask for.');
-    if (!v.biz) bad('f-biz', 'Add your business name. We read up on it before the call.');
-    if (!v.type) bad('f-type', 'Choose the closest type. "Something else" is fine.');
+    if (!v.name) bad('f-name', msg.errors.name);
+    if (!v.biz) bad('f-biz', msg.errors.biz);
+    if (!v.type) bad('f-type', msg.errors.type);
     const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.contact);
     const isHandle = /^@?[A-Za-z0-9._]{2,30}$/.test(v.contact);
-    if (!v.contact) bad('f-contact', 'Add an email or Instagram handle so we can confirm the time.');
-    else if (!isEmail && !isHandle) bad('f-contact', 'That doesn’t look like an email or a handle. Try you@shop.sg or @yourshop.');
-    if (v.problem.length < 15) bad('f-problem', 'Tell us a little more. One or two sentences is enough.');
-    if (chosenSlot < 0) bad('f-slot', 'Pick a time that suits you.');
+    if (!v.contact) bad('f-contact', msg.errors.contact);
+    else if (!isEmail && !isHandle) bad('f-contact', msg.errors.contactFormat);
+    if (v.problem.length < 15) bad('f-problem', msg.errors.problem);
+    if (chosenSlot < 0) bad('f-slot', msg.errors.slot);
     if (firstBad) {
       const el = document.querySelector<HTMLElement>(
         '#' + firstBad + ' input, #' + firstBad + ' select, #' + firstBad + ' textarea, #' + firstBad + ' .slot'
@@ -189,25 +261,26 @@ const businessTypes = [
     }
     formWrap.innerHTML =
       '<div class="confirm">' +
-      '<p class="label">Request received</p>' +
-      '<h2 class="d-m">Thanks, ' + escapeHtml(v.name.split(' ')[0]) + '. We’ll do our <em class="em">homework.</em></h2>' +
-      '<p class="body-s" style="color:var(--ink-muted)">We’ll confirm your slot by ' + (isEmail ? 'email' : 'Instagram DM') +
-      ' within [one working day].</p>' +
+      '<p class="label">' + escapeHtml(msg.confirm.label) + '</p>' +
+      '<h2 class="d-m">' + richHtml(fill(msg.confirm.headline, { name: v.name.split(' ')[0] }), { emClass: true }) + '</h2>' +
+      '<p class="body-s" style="color:var(--ink-muted)">' +
+      escapeHtml(fill(msg.confirm.body, { channel: isEmail ? msg.confirm.channelEmail : msg.confirm.channelDm })) +
+      '</p>' +
       '<div class="confirm-ground"><div class="receipt receipt--dark">' +
       receiptHTML({
         number: ref,
         lines: [
-          { l: 'Business', v: v.biz },
-          { l: 'Type', v: v.type },
-          { l: 'Call', v: slot.day + ', ' + slot.time },
-          { l: 'About', v: topic },
-          { l: 'Cost to you', v: 'S$0.00', hl: true },
+          { l: msg.confirm.lineBusiness, v: v.biz },
+          { l: msg.confirm.lineType, v: v.type },
+          { l: msg.confirm.lineCall, v: slot.day + ', ' + slot.time },
+          { l: msg.confirm.lineAbout, v: topic },
+          { l: msg.confirm.lineCost, v: msg.confirm.costValue, hl: true },
         ],
-        finding: 'See you on the <em>call.</em>',
-        footer: 'Prototype: this request was not sent.',
+        finding: msg.confirm.finding,
+        footer: msg.confirm.footer,
       }) +
       '</div></div>' +
-      '<button type="button" class="btn btn--forest" id="again">Start another request</button>' +
+      '<button type="button" class="btn btn--forest" id="again">' + escapeHtml(msg.confirm.again) + '</button>' +
       '</div>';
     $('#again').addEventListener('click', resetForm);
     formWrap.scrollIntoView({ block: 'start' });
@@ -272,13 +345,13 @@ const businessTypes = [
   if (!editingPage) $('#copyHandle').addEventListener('click', () => {
     const handle = $('.handle code').textContent || '';
     const p = navigator.clipboard?.writeText ? navigator.clipboard.writeText(handle) : Promise.reject();
-    p.then(() => toast('Copied ' + handle)).catch(() => {
+    p.then(() => toast(fill(msg.toastCopied, { handle }))).catch(() => {
       const r = document.createRange();
       r.selectNodeContents($('.handle code'));
       const s = getSelection()!;
       s.removeAllRanges();
       s.addRange(r);
-      toast('Selected. Copy it with your keyboard.');
+      toast(msg.toastSelected);
     });
   });
 </script>

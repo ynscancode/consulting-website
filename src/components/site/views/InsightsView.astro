@@ -1,7 +1,7 @@
 ---
 import InsightCard from '../InsightCard.astro';
 import { ed, edList, isEditing, siteContent } from '../../../lib/editable';
-import { richHtml } from '../../../lib/richText';
+import { richHtml, textHtml } from '../../../lib/richText';
 
 const L = Astro.locals;
 const c = siteContent(L);
@@ -12,9 +12,9 @@ const editing = isEditing(L);
 
 <section class="band band--forest band--tight on-dark">
   <div class="wrap page-hero">
-    <p class="label" {...ed(L, 'insightsPage.label')}>{p.label}</p>
+    <p class="label" {...ed(L, 'insightsPage.label')} set:html={textHtml(p.label)} />
     <h1 class="d-xl" {...ed(L, 'insightsPage.headline', 'rich')} set:html={richHtml(p.headline, { emClass: true })} />
-    <p class="lede" {...ed(L, 'insightsPage.lede')}>{p.lede}</p>
+    <p class="lede" {...ed(L, 'insightsPage.lede')} set:html={textHtml(p.lede)} />
   </div>
 </section>
 <section class="band band--paper on-light">
@@ -22,16 +22,20 @@ const editing = isEditing(L);
     <div class="chips" id="chips" role="group" aria-label="Filter by sector">
       {
         sectors.map((s) => (
-          <button type="button" class="chip" data-sector={s} aria-pressed={s === 'All' ? 'true' : 'false'}>
-            {s}
-          </button>
+          s === 'All' ? (
+            <button type="button" class="chip" data-sector="All" aria-pressed="true" {...ed(L, 'insightsPage.chipAll')} set:html={textHtml(p.chipAll)} />
+          ) : (
+            <button type="button" class="chip" data-sector={s} aria-pressed="false">
+              {s}
+            </button>
+          )
         ))
       }
     </div>
     <div class="cards" id="allCards" {...edList(L, 'insights')}>
       {c.insights.map((a, i) => <InsightCard insight={a} index={i} />)}
     </div>
-    <p class="empty" id="cardsEmpty" hidden={!editing} {...ed(L, 'insightsPage.empty')}>{p.empty}</p>
+    <p class="empty" id="cardsEmpty" hidden={!editing} {...ed(L, 'insightsPage.empty')} set:html={textHtml(p.empty)} />
     {
       editing && (
         <div class="edit-extra" data-edit-extra>

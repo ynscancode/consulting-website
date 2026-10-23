@@ -1,5 +1,6 @@
 ---
 import { ed, siteContent, siteLink } from '../../lib/editable';
+import { textHtml } from '../../lib/richText';
 
 export type NavKey = 'services' | 'approach' | 'insights' | 'about';
 export type Ground = 'forest' | 'paper' | 'rose' | 'ink';
@@ -20,27 +21,40 @@ const c = siteContent(Astro.locals);
 const isHome = ['/', '/edit', '/edit/'].includes(Astro.url.pathname);
 const ctaState = hideCta ? 'none' : isHome ? 'off' : 'on';
 
-const links: { key: NavKey; href: string; label: string }[] = [
-  { key: 'services', href: '/services', label: 'What we do' },
-  { key: 'approach', href: '/approach', label: 'How we work' },
-  { key: 'insights', href: '/insights', label: 'Insights' },
-  { key: 'about', href: '/about', label: 'About' },
+const links: { key: NavKey; href: string }[] = [
+  { key: 'services', href: '/services' },
+  { key: 'approach', href: '/approach' },
+  { key: 'insights', href: '/insights' },
+  { key: 'about', href: '/about' },
 ];
 ---
 
 <header class="site-header on-dark" data-ground={ground} data-cta={ctaState}>
   <div class="wrap header-row">
     <a class="wordmark" href={siteLink(Astro.locals, '/')} aria-label="Avisé & Co., home">Avisé <span class="amp" aria-hidden="true">&amp;</span> Co.</a>
-    <button class="menu-btn" id="menuBtn" aria-expanded="false" aria-controls="siteNav">Menu</button>
+    <button
+      class="menu-btn"
+      id="menuBtn"
+      aria-expanded="false"
+      aria-controls="siteNav"
+      data-label-menu={c.header.menu}
+      data-label-close={c.header.close}
+      {...ed(Astro.locals, 'header.menu')}
+      set:html={textHtml(c.header.menu)}
+    />
     <nav class="nav" id="siteNav" aria-label="Main">
       {
         links.map((link) => (
-          <a class="nav-link" href={siteLink(Astro.locals, link.href)} aria-current={link.key === current ? 'page' : undefined}>
-            {link.label}
-          </a>
+          <a
+            class="nav-link"
+            href={siteLink(Astro.locals, link.href)}
+            aria-current={link.key === current ? 'page' : undefined}
+            {...ed(Astro.locals, `header.nav.${link.key}`)}
+            set:html={textHtml(c.header.nav[link.key])}
+          />
         ))
       }
-      <span class="nav-cta-slot"><a class="btn btn--act btn--sm nav-cta" href={siteLink(Astro.locals, '/contact')} {...ed(Astro.locals, 'header.cta')}>{c.header.cta}</a></span>
+      <span class="nav-cta-slot"><a class="btn btn--act btn--sm nav-cta" href={siteLink(Astro.locals, '/contact')} {...ed(Astro.locals, 'header.cta')} set:html={textHtml(c.header.cta)} /></span>
     </nav>
   </div>
 </header>
@@ -130,7 +144,9 @@ const links: { key: NavKey; href: string; label: string }[] = [
     siteNav.classList.toggle('open', open);
     header.toggleAttribute('data-menu', open);
     menuBtn.setAttribute('aria-expanded', String(open));
-    menuBtn.textContent = open ? 'Close' : 'Menu';
+    menuBtn.textContent = (open ? menuBtn.dataset.labelClose : menuBtn.dataset.labelMenu) ?? '';
+    // In the editor, the label on show is the one that gets edited.
+    if (menuBtn.dataset.edit) menuBtn.dataset.edit = open ? 'header.close' : 'header.menu';
     updateHeader();
   });
 </script>

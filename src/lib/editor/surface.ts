@@ -1,193 +1,385 @@
 // The editing surface for the Avisé & Co. pages (browser-only). The /edit
 // route renders the real page views with data-edit hooks (src/lib/editable.ts);
-// this module turns them into an inline editor:
+// this module turns them into an editor with three modes, kept on
+// <html data-edit-mode> for the stylesheet:
+//
+//   viewing   (default) the page exactly as the live site shows it.
+//   choosing  after the toolbar's ✎: editable text is outlined, the
+//             editor-only panels and list controls appear, FAQs expand.
+//             Clicking a field opens it instead of following its link.
+//   editing   one field is open. Only the toolbar's Save and Cancel close
+//             it (or Ctrl/Cmd+Enter and Esc); clicks elsewhere do nothing.
 //
 //   [data-edit="path"]        text whose value is avise.json at `path`
-//     data-edit-kind="text"   plain text (contenteditable, plain-text only)
+//     data-edit-kind="text"   plain text; Enter adds a line break
 //     data-edit-kind="rich"   text with <em> emphasis (Ctrl/Cmd+I)
 //     data-edit-kind="select" a <select> whose value is the field
 //     data-edit-prefix="## "  stored before the visible text (subheadings)
 //   [data-edit-list="path"]   container whose [data-edit-item] children are
 //                             the items of the array at `path`
 //
-// Field edits save on blur through the shared autosaver (status, retries,
-// beforeunload guard) and the shared undo/redo stack. Only the changed paths
-// are sent; the server applies them to the latest draft. Adding, removing or
-// moving list items saves the whole list, then reloads so the server renders
-// the new structure.
+// Every Save writes that one field to the draft straight away. Undo and Redo
+// step through saved edits and save too, so the page always shows the draft.
+// Adding, removing or moving list items saves the whole list, then reloads so
+// the server renders the new structure (list changes aren't undo steps).
 
-import { getCsrfToken, getPath, makeAutosaver, saveArea, setPath } from './client';
-import type { SaveResult } from './client';
-import { commit, wireField } from './history';
-import { richFromNode, richHtml } from '../richText';
+import { getCsrfToken, getPath, saveArea, setPath, statusLabel, type SaveStatus } from './client';
+import { richFromNode, richHtml, textFromNode, textHtml } from '../richText';
 
 type Seed = { content: Record<string, unknown>; page: string; readonly: boolean };
-
-const seedEl = document.getElementById('editorSeed');
-if (seedEl) start(JSON.parse(seedEl.textContent || '{}') as Seed);
+type Mode = 'viewing' | 'choosing' | 'editing';
+type Step = { path: string; from: string; to: string };
+type Open = { el: HTMLElement; path: string; original: string };
 
 function start(seed: Seed) {
   const working = structuredClone(seed.content);
-  const dirty = new Set<string>();
+  const root = document.documentElement;
+  let mode: Mode = 'viewing';
+  let open: Open | null = null;
+  let saving = false;
+  let expanded: HTMLDetailsElement[] = [];
+  const history = loadHistory();
 
-  async function save(): Promise<SaveResult> {
-    const paths = [...dirty];
-    if (paths.length === 0) return { ok: true };
-    dirty.clear();
-    const result = await saveArea('avise', {
-      page: seed.page,
-      set: paths.map((path) => ({ path, value: getPath(working, path) })),
-    });
-    // A failed save keeps its fields pending for the retry / next save.
-    if (!result.ok) paths.forEach((p) => dirty.add(p));
-    return result;
+  /* ---------- State broadcast (the toolbar listens) ---------- */
+
+  function broadcast() {
+    if (mode === 'viewing') delete root.dataset.editMode;
+    else root.dataset.editMode = mode;
+    window.dispatchEvent(
+      new CustomEvent('editor:state', {
+        detail: { mode, saving, canUndo: history.undo.length > 0, canRedo: history.redo.length > 0 },
+      })
+    );
   }
 
-  const autosaver = makeAutosaver({ save, snapshot: () => JSON.stringify(working) });
-  window.addEventListener('editor:save-all', () => void autosaver.flush());
-
-  function setField(path: string, value: unknown) {
-    setPath(working, path, value);
-    dirty.add(path);
-    autosaver.markDirty();
+  function setStatus(status: SaveStatus) {
+    window.dispatchEvent(new CustomEvent('editor:area-status', { detail: { status, label: statusLabel(status) } }));
   }
 
-  /** Save everything pending now; true once nothing is left unsaved. */
-  async function saveNow(): Promise<boolean> {
-    await autosaver.flush();
-    return dirty.size === 0;
+  function say(text: string) {
+    window.dispatchEvent(new CustomEvent('editor:message', { detail: { text } }));
   }
 
-  wireFields(working, setField, autosaver, seed.readonly);
-  if (!seed.readonly) {
-    wireLists(working, setField, saveNow);
-    wireAboutPhoto(setField, saveNow);
-  }
-  guardClicks();
-}
+  /* ---------- Saving ---------- */
 
-/* ---------- Fields ---------- */
+  let queue: Promise<unknown> = Promise.resolve();
 
-function kindOf(el: HTMLElement): string {
-  return el.dataset.editKind || 'text';
-}
-
-function readEl(el: HTMLElement): string {
-  if (kindOf(el) === 'select') return (el as HTMLSelectElement).value;
-  const value = kindOf(el) === 'rich' ? richFromNode(el) : el.textContent ?? '';
-  return (el.dataset.editPrefix ?? '') + value;
-}
-
-function writeEl(el: HTMLElement, value: string) {
-  if (kindOf(el) === 'select') {
-    (el as HTMLSelectElement).value = value;
-    return;
-  }
-  const prefix = el.dataset.editPrefix ?? '';
-  const shown = prefix && value.startsWith(prefix) ? value.slice(prefix.length) : value;
-  if (kindOf(el) === 'rich') el.innerHTML = richHtml(shown, { emClass: el.matches('h1, h2') });
-  else el.textContent = shown;
-}
-
-function makeEditable(el: HTMLElement) {
-  if (kindOf(el) === 'select') return;
-  if (kindOf(el) === 'text') {
-    // Plain-text editing where supported (no stray markup from typing/paste).
-    el.contentEditable = 'plaintext-only';
-    if (el.contentEditable !== 'plaintext-only') el.contentEditable = 'true';
-  } else {
-    el.contentEditable = 'true';
-  }
-  el.spellcheck = true;
-  // Every field is one line or paragraph: Enter finishes the edit.
-  el.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      el.blur();
-    }
-  });
-  // Paste as plain text (rich fields keep only typed emphasis).
-  el.addEventListener('paste', (event) => {
-    event.preventDefault();
-    const text = (event.clipboardData?.getData('text/plain') ?? '').replace(/\s*\n\s*/g, ' ');
-    document.execCommand('insertText', false, text);
-  });
-}
-
-function wireFields(
-  working: Record<string, unknown>,
-  setField: (path: string, value: unknown) => void,
-  autosaver: ReturnType<typeof makeAutosaver>,
-  readonly: boolean
-) {
-  // The same path can appear more than once on a page (e.g. a service name in
-  // two places, a shared label): edits to one copy update the others.
-  const groups = new Map<string, HTMLElement[]>();
-  document.querySelectorAll<HTMLElement>('[data-edit]').forEach((el) => {
-    const path = el.dataset.edit!;
-    if (!groups.has(path)) groups.set(path, []);
-    groups.get(path)!.push(el);
-  });
-
-  groups.forEach((els, path) => {
-    const syncOthers = (from: HTMLElement | null, value: string) => {
-      els.forEach((other) => {
-        if (other !== from) writeEl(other, value);
-      });
-    };
-    els.forEach((el, i) => {
-      if (readonly) return;
-      makeEditable(el);
-      const onEdit = () => {
-        const value = readEl(el);
-        setField(path, value);
-        syncOthers(el, value);
-      };
-      el.addEventListener(kindOf(el) === 'select' ? 'change' : 'input', onEdit);
-      const historyId = `avise:${path}`;
-      if (i === 0) {
-        wireField({
-          id: historyId,
-          el,
-          getValue: () => String(getPath(working, path) ?? ''),
-          setValue: (value) => {
-            els.forEach((target) => writeEl(target, value));
-          },
-          onApply: (value) => {
-            setField(path, value);
-            void autosaver.flush();
-          },
-          commitEvent: kindOf(el) === 'select' ? 'change' : 'blur',
-        });
-      } else {
-        // Secondary copies share the first copy's undo history.
-        el.addEventListener(kindOf(el) === 'select' ? 'change' : 'blur', () => commit(historyId));
+  /** Saves edits to the draft, one request at a time. A transient GitHub
+   * failure gets one automatic retry before it counts as failed. */
+  function persist(set: { path: string; value: unknown }[]): Promise<boolean> {
+    const run = async (): Promise<boolean> => {
+      saving = true;
+      broadcast();
+      setStatus('saving');
+      let result = await saveArea('avise', { page: seed.page, set }).catch(() => ({ ok: false, error: 'network_error' }));
+      if (!result.ok && (result.error === 'github_unavailable' || result.error === 'network_error')) {
+        setStatus('retrying');
+        await new Promise((r) => setTimeout(r, 4000));
+        result = await saveArea('avise', { page: seed.page, set }).catch(() => ({ ok: false, error: 'network_error' }));
       }
-      el.addEventListener(kindOf(el) === 'select' ? 'change' : 'blur', () => {
-        // Normalise what's shown (e.g. rich markup) to what will be saved.
-        if (kindOf(el) === 'rich') writeEl(el, String(getPath(working, path) ?? ''));
-        void autosaver.flushIfDirty();
-      });
-    });
-  });
-}
+      saving = false;
+      if (result.ok) setStatus('saved');
+      else if (result.error !== 'csrf_invalid') setStatus('error'); // csrf: the toolbar shows "Session expired"
+      broadcast();
+      return result.ok;
+    };
+    const next = queue.then(run, run);
+    queue = next;
+    return next;
+  }
 
-/* ---------- Clicks: edit text instead of following links/buttons ---------- */
+  /* ---------- Fields ---------- */
 
-function guardClicks() {
+  const kindOf = (el: HTMLElement) => el.dataset.editKind || 'text';
+
+  function readEl(el: HTMLElement): string {
+    if (kindOf(el) === 'select') return (el as HTMLSelectElement).value;
+    const value = kindOf(el) === 'rich' ? richFromNode(el) : textFromNode(el);
+    return (el.dataset.editPrefix ?? '') + value;
+  }
+
+  function writeEl(el: HTMLElement, value: string) {
+    if (kindOf(el) === 'select') {
+      (el as HTMLSelectElement).value = value;
+      return;
+    }
+    const prefix = el.dataset.editPrefix ?? '';
+    const shown = prefix && value.startsWith(prefix) ? value.slice(prefix.length) : value;
+    el.innerHTML = kindOf(el) === 'rich' ? richHtml(shown, { emClass: el.matches('h1, h2') }) : textHtml(shown);
+  }
+
+  /** Every copy of a field on the page (e.g. a service name shown twice). */
+  const copiesOf = (path: string) =>
+    Array.from(document.querySelectorAll<HTMLElement>('[data-edit]')).filter((el) => el.dataset.edit === path);
+
+  function showValue(path: string, value: string) {
+    copiesOf(path).forEach((el) => writeEl(el, value));
+  }
+
+  function setCaretFromPoint(x: number, y: number) {
+    const doc = document as Document & { caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node; offset: number } | null };
+    let range: Range | null = null;
+    if (doc.caretPositionFromPoint) {
+      const pos = doc.caretPositionFromPoint(x, y);
+      if (pos) {
+        range = document.createRange();
+        range.setStart(pos.offsetNode, pos.offset);
+      }
+    } else if (document.caretRangeFromPoint) {
+      range = document.caretRangeFromPoint(x, y);
+    }
+    if (!range || !open?.el.contains(range.startContainer)) return;
+    range.collapse(true);
+    const sel = getSelection();
+    sel?.removeAllRanges();
+    sel?.addRange(range);
+  }
+
+  function openField(el: HTMLElement, x?: number, y?: number) {
+    const path = el.dataset.edit!;
+    open = { el, path, original: String(getPath(working, path) ?? '') };
+    mode = 'editing';
+    el.classList.add('is-editing');
+    if (kindOf(el) !== 'select') {
+      if (kindOf(el) === 'text') {
+        el.contentEditable = 'plaintext-only';
+        if (el.contentEditable !== 'plaintext-only') el.contentEditable = 'true';
+      } else {
+        el.contentEditable = 'true';
+      }
+      el.spellcheck = true;
+      el.focus();
+      if (x !== undefined && y !== undefined) setCaretFromPoint(x, y);
+    } else {
+      el.focus();
+    }
+    setStatus('dirty');
+    say('Editing. Save or Cancel in the toolbar when you’re done.');
+    broadcast();
+  }
+
+  function closeField() {
+    if (!open) return;
+    const { el } = open;
+    el.classList.remove('is-editing');
+    el.removeAttribute('contenteditable');
+    el.blur();
+    open = null;
+    stopChoosing();
+  }
+
+  async function saveField() {
+    if (!open || saving) return;
+    const { el, path, original } = open;
+    const value = readEl(el);
+    if (value === original) {
+      showValue(path, original);
+      closeField();
+      setStatus('idle');
+      say('');
+      return;
+    }
+    setPath(working, path, value);
+    if (await persist([{ path, value }])) {
+      showValue(path, value); // normalised to what was saved, on every copy
+      pushStep({ path, from: original, to: value });
+      closeField();
+      say('');
+    } else {
+      // Keep the field open with its text, so Save can be tried again.
+      setPath(working, path, original);
+      say('That didn’t save. Try Save again, or Cancel.');
+    }
+  }
+
+  function cancelField() {
+    if (!open || saving) return;
+    showValue(open.path, open.original);
+    closeField();
+    setStatus('idle');
+    say('');
+  }
+
+  /* ---------- Choosing ---------- */
+
+  function startChoosing() {
+    if (seed.readonly || mode !== 'viewing') return;
+    mode = 'choosing';
+    // Expand every FAQ so its answer can be picked too; closed again after.
+    expanded = Array.from(document.querySelectorAll<HTMLDetailsElement>('main details:not([open])'));
+    expanded.forEach((d) => (d.open = true));
+    say('Click any outlined text to edit it. Press ✎ again or Esc to stop.');
+    broadcast();
+  }
+
+  function stopChoosing() {
+    expanded.forEach((d) => (d.open = false));
+    expanded = [];
+    mode = 'viewing';
+    if (!open) say('');
+    broadcast();
+  }
+
+  /* ---------- Undo / redo (saved edits, saved again) ---------- */
+
+  function pushStep(step: Step) {
+    history.undo.push(step);
+    if (history.undo.length > 100) history.undo.shift();
+    history.redo = [];
+    saveHistory(history);
+    broadcast();
+  }
+
+  async function step(direction: 'undo' | 'redo') {
+    if (mode === 'editing' || saving) return;
+    const from = direction === 'undo' ? history.undo : history.redo;
+    const to = direction === 'undo' ? history.redo : history.undo;
+    const s = from.pop();
+    if (!s) return;
+    const value = direction === 'undo' ? s.from : s.to;
+    const previous = direction === 'undo' ? s.to : s.from;
+    setPath(working, s.path, value);
+    showValue(s.path, value);
+    saveHistory(history);
+    if (await persist([{ path: s.path, value }])) {
+      to.push(s);
+      saveHistory(history);
+      say(direction === 'undo' ? 'Undone and saved.' : 'Redone and saved.');
+    } else {
+      // Put everything back as it was before the attempt.
+      setPath(working, s.path, previous);
+      showValue(s.path, previous);
+      from.push(s);
+      saveHistory(history);
+      say(direction === 'undo' ? 'Couldn’t undo: the change didn’t save.' : 'Couldn’t redo: the change didn’t save.');
+    }
+    broadcast();
+  }
+
+  /* ---------- Toolbar requests ---------- */
+
+  window.addEventListener('editor:toggle-choose', () => (mode === 'choosing' ? stopChoosing() : startChoosing()));
+  window.addEventListener('editor:save-field', () => void saveField());
+  window.addEventListener('editor:cancel-field', () => cancelField());
+  window.addEventListener('editor:undo', () => void step('undo'));
+  window.addEventListener('editor:redo', () => void step('redo'));
+  // The toolbar may start listening after the first broadcast: it asks.
+  window.addEventListener('editor:state-request', broadcast);
+
+  /* ---------- Keyboard ---------- */
+
   document.addEventListener(
-    'click',
+    'keydown',
     (event) => {
-      const target = event.target as Element | null;
-      // Editing a link's or button's label must not navigate, submit or toggle.
-      if (target?.closest('[data-edit]')) event.preventDefault();
+      if (mode === 'choosing' && event.key === 'Escape') {
+        event.preventDefault();
+        stopChoosing();
+        return;
+      }
+      if (mode !== 'editing' || !open) return;
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        cancelField();
+      } else if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+        event.preventDefault();
+        void saveField();
+      } else if (open.el.contains(event.target as Node) && kindOf(open.el) !== 'select') {
+        if (event.key === 'Enter') {
+          // A line break, never a new block (and never a button press).
+          event.preventDefault();
+          document.execCommand('insertLineBreak');
+        } else if (event.key === ' ' && open.el.matches('button, summary, a')) {
+          // A space, not a press of the button/summary being edited.
+          event.preventDefault();
+          document.execCommand('insertText', false, ' ');
+        }
+      }
     },
     true
   );
+
+  // Paste as plain text (rich fields keep only typed emphasis); line breaks stay.
+  document.addEventListener('paste', (event) => {
+    if (!open || !open.el.contains(event.target as Node) || kindOf(open.el) === 'select') return;
+    event.preventDefault();
+    document.execCommand('insertText', false, event.clipboardData?.getData('text/plain') ?? '');
+  });
+
+  /* ---------- Clicks ---------- */
+
+  const inToolbar = (t: Element | null) => !!t?.closest('#editor-toolbar');
+
+  function guard(event: MouseEvent) {
+    const target = event.target as Element | null;
+    if (mode === 'viewing' || inToolbar(target) || target?.closest('.edit-listbar')) return;
+
+    if (mode === 'editing' && open) {
+      if (open.el.contains(target)) {
+        // Place the caret, but don't follow a link or press a button being edited.
+        if (event.type === 'click') event.preventDefault();
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      if (event.type === 'click') say('Save or Cancel this field first.');
+      return;
+    }
+
+    // Choosing: a click on outlined text opens it.
+    const field = target?.closest<HTMLElement>('[data-edit]');
+    if (field) {
+      event.preventDefault();
+      event.stopPropagation();
+      // A <select> opens on mousedown; everything else on click.
+      const isSelect = kindOf(field) === 'select';
+      if ((isSelect && event.type === 'mousedown') || (!isSelect && event.type === 'click')) {
+        openField(field, event.clientX, event.clientY);
+      }
+    }
+  }
+  document.addEventListener('mousedown', guard, true);
+  document.addEventListener('click', guard, true);
+  document.addEventListener('submit', (event) => event.preventDefault(), true);
+
+  window.addEventListener('beforeunload', (event) => {
+    const unsaved = (open && readEl(open.el) !== open.original) || saving;
+    if (!unsaved) return;
+    event.preventDefault();
+    event.returnValue = '';
+  });
+
+  if (!seed.readonly) {
+    wireLists(working, persist, () => mode === 'choosing');
+    wireAboutPhoto(persist);
+  }
+  broadcast();
 }
 
-/* ---------- Lists: add, remove, move ---------- */
+/* ---------- Undo history (kept for the tab, across page changes) ---------- */
 
+const HISTORY_KEY = 'avise:edit-history';
+
+function loadHistory(): { undo: Step[]; redo: Step[] } {
+  try {
+    const raw = JSON.parse(sessionStorage.getItem(HISTORY_KEY) || 'null');
+    if (raw && Array.isArray(raw.undo) && Array.isArray(raw.redo)) return raw;
+  } catch {
+    // Storage unavailable or corrupt: start empty.
+  }
+  return { undo: [], redo: [] };
+}
+
+function saveHistory(history: { undo: Step[]; redo: Step[] }) {
+  try {
+    sessionStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  } catch {
+    // Storage unavailable: history lasts for this page only.
+  }
+}
+
+/* ---------- Lists: add, remove, move (while choosing) ---------- */
+
+type Persist = (set: { path: string; value: unknown }[]) => Promise<boolean>;
 type ListOp = { label: string; title: string; run: (list: unknown[], index: number) => void; danger?: boolean };
 
 function newItemFor(listPath: string, list: unknown[], variant?: 'subheading'): unknown {
@@ -237,11 +429,7 @@ function newItemFor(listPath: string, list: unknown[], variant?: 'subheading'): 
   }
 }
 
-function wireLists(
-  working: Record<string, unknown>,
-  setField: (path: string, value: unknown) => void,
-  saveNow: () => Promise<boolean>
-) {
+function wireLists(working: Record<string, unknown>, persist: Persist, active: () => boolean) {
   const bar = document.createElement('div');
   bar.className = 'edit-listbar';
   bar.setAttribute('role', 'toolbar');
@@ -254,10 +442,10 @@ function wireLists(
   async function applyListChange(path: string, list: unknown[]) {
     busy = true;
     document.documentElement.classList.add('edit-busy');
-    setField(path, list);
-    // Reload only once saved; a failed save leaves the page (and the pending
-    // change) as is, with the toolbar showing the error.
-    if (await saveNow()) {
+    setPath(working, path, list);
+    // Reload only once saved; a failed save leaves the page as it was, with
+    // the toolbar showing the error.
+    if (await persist([{ path, value: list }])) {
       location.reload();
     } else {
       busy = false;
@@ -280,11 +468,12 @@ function wireLists(
       ops.push({
         label: '★',
         title: 'Make this the highlighted line',
-        run: (l, i) => l.forEach((line, j) => {
-          const ln = line as { hl?: boolean };
-          if (j === i) ln.hl = true;
-          else delete ln.hl;
-        }),
+        run: (l, i) =>
+          l.forEach((line, j) => {
+            const ln = line as { hl?: boolean };
+            if (j === i) ln.hl = true;
+            else delete ln.hl;
+          }),
       });
     }
     ops.push({ label: '✕', title: `Remove this ${noun}`, danger: true, run: (l, i) => l.splice(i, 1) });
@@ -292,7 +481,7 @@ function wireLists(
   }
 
   function showBar(listEl: HTMLElement, itemEl: HTMLElement) {
-    if (busy) return;
+    if (busy || !active()) return;
     current = { listEl, itemEl };
     const path = listEl.dataset.editList!;
     const list = getPath(working, path) as unknown[];
@@ -336,6 +525,7 @@ function wireLists(
   document.addEventListener('mouseover', (event) => {
     const target = event.target as Node;
     if (bar.contains(target)) return;
+    if (!active()) return hideBar();
     const hit = itemOf(target);
     if (hit) {
       if (hit.itemEl !== current?.itemEl) showBar(hit.listEl, hit.itemEl);
@@ -344,10 +534,14 @@ function wireLists(
       hideBar();
     }
   });
-  document.addEventListener('focusin', (event) => {
-    if (bar.contains(event.target as Node)) return;
+  // Touch screens have no hover: a tap on a list item (outside its text) shows its bar.
+  document.addEventListener('pointerdown', (event) => {
+    if (event.pointerType === 'mouse' || bar.contains(event.target as Node)) return;
     const hit = itemOf(event.target);
-    if (hit) showBar(hit.listEl, hit.itemEl);
+    if (hit && active()) showBar(hit.listEl, hit.itemEl);
+  });
+  window.addEventListener('editor:state', () => {
+    if (!active()) hideBar();
   });
   document.addEventListener('mouseleave', hideBar);
   window.addEventListener('resize', () => current && showBar(current.listEl, current.itemEl));
@@ -369,9 +563,9 @@ function wireLists(
   });
 }
 
-/* ---------- About photo ---------- */
+/* ---------- About photo (while choosing) ---------- */
 
-function wireAboutPhoto(setField: (path: string, value: unknown) => void, saveNow: () => Promise<boolean>) {
+function wireAboutPhoto(persist: Persist) {
   const upload = document.getElementById('aboutPhotoUpload');
   const remove = document.getElementById('aboutPhotoRemove');
   const input = document.getElementById('aboutPhotoInput') as HTMLInputElement | null;
@@ -383,9 +577,8 @@ function wireAboutPhoto(setField: (path: string, value: unknown) => void, saveNo
   };
 
   async function setImage(path: string | null) {
-    setField('aboutPage.image', path);
-    if (await saveNow()) location.reload();
-    else say('Uploaded, but saving failed. Use Save to draft to try again.');
+    if (await persist([{ path: 'aboutPage.image', value: path }])) location.reload();
+    else say('Uploaded, but saving failed. Try again.');
   }
 
   upload.addEventListener('click', () => input.click());
@@ -427,3 +620,7 @@ function wireAboutPhoto(setField: (path: string, value: unknown) => void, saveNo
     reader.readAsDataURL(file);
   });
 }
+
+// Start last, once every module-level constant above is initialised.
+const seedEl = document.getElementById('editorSeed');
+if (seedEl) start(JSON.parse(seedEl.textContent || '{}') as Seed);

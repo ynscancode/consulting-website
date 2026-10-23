@@ -12,8 +12,8 @@ below) but still applies to anything not yet exposed in the editor UI.
 ## 1. What the editor is
 
 The inline editor lets you edit the site's content directly on the live-styled
-pages — click a heading or paragraph and type, rather than filling out a separate
-admin form. It's gated to a single GitHub account (yours) via GitHub OAuth; nobody
+pages — press ✎, click a heading or paragraph and type, rather than filling out
+a separate admin form. It's gated to a single GitHub account (yours) via GitHub OAuth; nobody
 else can see or use it. Changes you make are saved to a dedicated git branch (a
 "draft"), which gets its own Vercel preview deployment so you can check how a
 change looks before it goes live. Nothing reaches the public site until you
@@ -134,27 +134,53 @@ ever holds placeholder values — if you ever edit that file, keep it that way.
      `/edit/insights/<id>`, `/edit/about`, `/edit/contact`
    - `/edit/history`: version history
    The header and footer links keep you inside the editor.
-3. **Edit text in place:** anything with a dashed outline is editable: click it
-   and type. That covers headlines, ledes, labels, button text, list items, FAQ
-   questions and answers, receipts, the footer and the contact page's form
-   labels. Press Enter (or click away) to finish a field. In a headline, select
-   a phrase and press Ctrl+I (Cmd+I on a Mac) to set the italic emphasis; that is
-   the only formatting kept. Pasted text arrives as plain text.
-4. **Lists:** hover over (or click into) a list item to get its toolbar: ↑ ↓ to
-   move it, + to add one after it, ✕ to remove it. In an insight's body, "+ H"
-   adds a subheading; on a receipt line, ★ makes it the highlighted (citron)
-   line. Adding a whole insight creates its page at `/insights/<id>`.
-   List changes save straight away and the page reloads to show them.
-5. **Fields the page doesn't show** sit in dashed editor-only panels: each
-   self-check symptom's suggested fix and area (home), an insight's sector and
-   card colour (on the insight's page), the text under every insight card
-   (insights list), and the About photo (upload, replace, remove).
-   Not editable here: navigation labels, links, the booking form's time slots
-   and business types, the self-check receipt's wording, page titles and
-   descriptions, colours and layout. Those are code changes.
-6. **Save to draft:** each field saves when you leave it (or press Enter). The
-   toolbar shows unsaved changes, saving, saved, or an error; **Save to draft**
-   saves anything pending. **Undo** / **Redo** step through your field edits.
+3. **Edit text in place:** the editor opens looking exactly like the live
+   site, and links work as normal so you can move between pages. To change a
+   text, press the **✎** button in the toolbar: every editable text gets a
+   dashed outline (and every FAQ opens, so the answers can be reached). Click
+   the one you want; that single field opens with a solid ring and a caret.
+   - **Save** (toolbar, or Ctrl+Enter / Cmd+Enter) writes it to the draft
+     straight away and closes it. **Cancel** (or Esc) puts the text back.
+   - Only one field is open at a time. Clicking elsewhere does nothing until
+     you Save or Cancel, and Preview, Publish and Log out wait too.
+   - Enter starts a new line, which shows on the site as a line break.
+   - In a headline, select a phrase and press Ctrl+I (Cmd+I on a Mac) to set
+     the italic emphasis; that is the only formatting kept. Pasted text arrives
+     as plain text.
+   - Press **✎** again to stop choosing; the outlines go and FAQs close.
+
+   Every text on the site is editable except the Avisé & Co. wordmark:
+   headlines, ledes, labels, button and link text, the header navigation and
+   footer, list items, FAQ questions and answers, receipts, the self-check
+   options and the contact form's labels.
+4. **Lists:** while choosing (after ✎), hover over (or tap) a list item to get
+   its toolbar: ↑ ↓ to move it, + to add one after it, ✕ to remove it. In an
+   insight's body, "+ H" adds a subheading; on a receipt line, ★ makes it the
+   highlighted (citron) line. Adding a whole insight creates its page at
+   `/insights/<id>`. List changes save straight away and the page reloads to
+   show them; they aren't undo steps.
+5. **Texts the page doesn't show** appear in dashed editor-only panels while
+   choosing, and are edited the same way:
+   - every page: its browser-tab title and search-result description, plus
+     the phone menu's "Close" label and the "Skip to content" link;
+   - home: each self-check option's suggested fix and area, and the result
+     receipt's wording (item counts, the mixed-areas finding, each area's name
+     and finding);
+   - insights: the text under every card; each insight's page: its sector and
+     card colour;
+   - contact: the business types and placeholder, the form's error messages,
+     the confirmation shown after sending, and the copy-handle messages;
+   - about: the photo (upload, replace, remove).
+
+   Some messages contain placeholders in braces, such as `{name}` or `{n}`;
+   keep them and they're filled in on the site. The self-check, insight filter
+   and booking form don't respond in the editor (their texts are edited
+   instead). Not editable here: links, the booking form's time slots, colours
+   and layout. Those are code changes.
+6. **Undo / Redo:** step back and forward through your saved field edits
+   (Ctrl+Z / Ctrl+Shift+Z work too). Each undo or redo is saved to the draft
+   automatically. The history lasts while the browser tab stays open, across
+   page changes. The toolbar shows saving, saved, or an error.
 7. **Preview:** click **Preview** to build the draft branch's Vercel preview:
    the actual site with your unpublished changes. If nothing has been saved to
    the draft yet, Preview will tell you to save a change first.

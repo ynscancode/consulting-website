@@ -1,6 +1,6 @@
 ---
 import { ed, edItem, edList, siteContent, siteLink } from '../../lib/editable';
-import { richHtml } from '../../lib/richText';
+import { richHtml, textHtml } from '../../lib/richText';
 
 export type Props = {
   showCta?: boolean;
@@ -9,6 +9,7 @@ export type Props = {
 const { showCta = true } = Astro.props;
 const L = Astro.locals;
 const f = siteContent(L).footer;
+const nav = siteContent(L).header.nav;
 ---
 
 <footer class="band band--forest on-dark" id="footer">
@@ -18,32 +19,33 @@ const f = siteContent(L).footer;
         <div class="cta-inner" id="ctaBlock">
           <div class="stack">
             <h2 class="d-l" {...ed(L, 'footer.ctaHeadline', 'rich')} set:html={richHtml(f.ctaHeadline, { emClass: true })} />
-            <p class="lede muted" {...ed(L, 'footer.ctaLede')}>{f.ctaLede}</p>
+            <p class="lede muted" {...ed(L, 'footer.ctaLede')} set:html={textHtml(f.ctaLede)} />
           </div>
-          <a class="btn btn--act" href={siteLink(L, '/contact')} {...ed(L, 'footer.ctaButton')}>
-            {f.ctaButton}
-          </a>
+          <a class="btn btn--act" href={siteLink(L, '/contact')} {...ed(L, 'footer.ctaButton')} set:html={textHtml(f.ctaButton)} />
         </div>
       )
     }
     <div class="foot">
       <div class="stack" style="gap:var(--space-2)">
         <a class="wordmark" href={siteLink(L, '/')} aria-label="Avisé & Co., home">Avisé <span class="amp" aria-hidden="true">&amp;</span> Co.</a>
-        <p class="body-s muted" {...ed(L, 'footer.tagline')}>{f.tagline}</p>
+        <p class="body-s muted" {...ed(L, 'footer.tagline')} set:html={textHtml(f.tagline)} />
       </div>
       <ul>
-        <li><a href={siteLink(L, '/services')}>What we do</a></li>
-        <li><a href={siteLink(L, '/approach')}>How we work</a></li>
-        <li><a href={siteLink(L, '/insights')}>Insights</a></li>
-        <li><a href={siteLink(L, '/about')}>About</a></li>
+        {
+          (['services', 'approach', 'insights', 'about'] as const).map((key) => (
+            <li>
+              <a href={siteLink(L, `/${key}`)} {...ed(L, `header.nav.${key}`)} set:html={textHtml(nav[key])} />
+            </li>
+          ))
+        }
       </ul>
       <ul {...edList(L, 'footer.contact')}>
-        {f.contact.map((line, i) => <li class="muted" {...edItem(L, i)} {...ed(L, `footer.contact.${i}`)}>{line}</li>)}
+        {f.contact.map((line, i) => <li class="muted" {...edItem(L, i)} {...ed(L, `footer.contact.${i}`)} set:html={textHtml(line)} />)}
       </ul>
     </div>
     <div class="foot-base">
-      <p class="caption muted" {...ed(L, 'footer.legal')}>{f.legal}</p>
-      <p class="caption muted" {...ed(L, 'footer.note')}>{f.note}</p>
+      <p class="caption muted" {...ed(L, 'footer.legal')} set:html={textHtml(f.legal)} />
+      <p class="caption muted" {...ed(L, 'footer.note')} set:html={textHtml(f.note)} />
     </div>
   </div>
 </footer>
