@@ -1,5 +1,6 @@
 ---
-import { ed, edItem, edList, isEditing } from '../../lib/editable';
+import { textHtml } from '../../lib/richText';
+import { ed, edItem, edList } from '../../lib/editable';
 
 export type Props = {
   items: { q: string; a: string }[];
@@ -9,16 +10,14 @@ export type Props = {
 
 const { items, path } = Astro.props;
 const L = Astro.locals;
-// Open in the editor so every answer can be edited in place.
-const open = isEditing(L);
 ---
 
 <div class="faq" {...edList(L, path)}>
   {
     items.map((f, i) => (
-      <details open={open} {...edItem(L, i)}>
-        <summary {...ed(L, `${path}.${i}.q`)}>{f.q}</summary>
-        <p {...ed(L, `${path}.${i}.a`)}>{f.a}</p>
+      <details {...edItem(L, i)}>
+        <summary {...ed(L, `${path}.${i}.q`)} set:html={textHtml(f.q)} />
+        <p {...ed(L, `${path}.${i}.a`)} set:html={textHtml(f.a)} />
       </details>
     ))
   }

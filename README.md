@@ -54,15 +54,16 @@ src/
 │   │   ├── views/             # One view per page (HomeView, ServicesView, …), used by the site AND the editor
 │   │   └── …                  # SiteHeader, SiteFooter, Receipt, Steps, InsightCard, SelfCheck, Faq, Principles
 │   ├── edit/EditHistory.astro # Editor version-history view
-│   └── EditorHarness.astro    # Editor toolbar (save, undo/redo, preview, publish)
+│   ├── edit/EditorPanels.astro # Editor-only panel: page title/description, site-wide labels
+│   └── EditorHarness.astro    # Editor toolbar (✎, save/cancel, undo/redo, preview, publish)
 ├── styles/
 │   ├── avise.css              # Avisé & Co. tokens and styles (site and editor)
 │   └── editor.css             # Editor-only chrome (edit outlines, list controls, toolbar, history)
 ├── lib/
 │   ├── aviseSchema.ts         # Schema for avise.json (build and editor saves)
 │   ├── editable.ts            # Edit-mode hooks the views add only inside the editor
-│   ├── richText.ts            # Headline emphasis: only <em> survives rendering
-│   ├── editor/surface.ts      # In-page editing: fields, lists, saves
+│   ├── richText.ts            # Text rendering: line breaks, headline emphasis (only <em> survives)
+│   ├── editor/surface.ts      # In-page editing: ✎ mode, one field at a time, lists, saves
 │   └── …                      # Receipt renderer, draft loader, GitHub/Vercel plumbing
 └── middleware.ts              # Editor session gate
 

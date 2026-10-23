@@ -6,7 +6,7 @@ import Steps from '../Steps.astro';
 import InsightCard from '../InsightCard.astro';
 import SelfCheck from '../SelfCheck.astro';
 import { ed, edItem, edList, siteContent, siteLink } from '../../../lib/editable';
-import { richHtml } from '../../../lib/richText';
+import { richHtml, textHtml } from '../../../lib/richText';
 
 const L = Astro.locals;
 const c = siteContent(L);
@@ -16,14 +16,14 @@ const h = c.home;
 <section class="band band--forest on-dark">
   <div class="wrap hero-grid">
     <div class="hero-copy">
-      <p class="label" {...ed(L, 'home.hero.label')}>{h.hero.label}</p>
+      <p class="label" {...ed(L, 'home.hero.label')} set:html={textHtml(h.hero.label)} />
       <h1 class="d-xl" {...ed(L, 'home.hero.headline', 'rich')} set:html={richHtml(h.hero.headline, { emClass: true })} />
-      <p class="lede" {...ed(L, 'home.hero.lede')}>{h.hero.lede}</p>
+      <p class="lede" {...ed(L, 'home.hero.lede')} set:html={textHtml(h.hero.lede)} />
       <div class="btn-row" id="heroCta">
-        <a class="btn btn--act" href={siteLink(L, '/contact')} {...ed(L, 'home.hero.primary')}>{h.hero.primary}</a>
-        <a class="btn btn--outline" href={siteLink(L, '/services')} {...ed(L, 'home.hero.secondary')}>{h.hero.secondary}</a>
+        <a class="btn btn--act" href={siteLink(L, '/contact')} {...ed(L, 'home.hero.primary')} set:html={textHtml(h.hero.primary)} />
+        <a class="btn btn--outline" href={siteLink(L, '/services')} {...ed(L, 'home.hero.secondary')} set:html={textHtml(h.hero.secondary)} />
       </div>
-      <p class="caption muted" {...ed(L, 'home.hero.caption')}>{h.hero.caption}</p>
+      <p class="caption muted" {...ed(L, 'home.hero.caption')} set:html={textHtml(h.hero.caption)} />
     </div>
     <Receipt variant="hero" label="What the free consultation includes" data={c.heroReceipt} editPath="heroReceipt" />
   </div>
@@ -32,32 +32,28 @@ const h = c.home;
 <section class="band band--paper on-light">
   <div class="wrap">
     <div class="section-head">
-      <p class="label" {...ed(L, 'home.services.label')}>{h.services.label}</p>
+      <p class="label" {...ed(L, 'home.services.label')} set:html={textHtml(h.services.label)} />
       <h2 class="d-l" {...ed(L, 'home.services.headline', 'rich')} set:html={richHtml(h.services.headline, { emClass: true })} />
     </div>
     <div class="services">
       {
         c.services.map((s, i) => (
           <div class="service">
-            <h3 class="d-s" {...ed(L, `services.${i}.name`)}>{s.name}</h3>
-            <p class="body-s" style="color:var(--ink-muted)" {...ed(L, `services.${i}.short`)}>
-              {s.short}
-            </p>
+            <h3 class="d-s" {...ed(L, `services.${i}.name`)} set:html={textHtml(s.name)} />
+            <p class="body-s" style="color:var(--ink-muted)" {...ed(L, `services.${i}.short`)} set:html={textHtml(s.short)} />
             <ul {...edList(L, `services.${i}.items`)}>
               {s.items.map((item, j) => (
-                <li {...edItem(L, j)} {...ed(L, `services.${i}.items.${j}`)}>{item}</li>
+                <li {...edItem(L, j)} {...ed(L, `services.${i}.items.${j}`)} set:html={textHtml(item)} />
               ))}
             </ul>
-            <a class="more text-link" href={siteLink(L, `/services#svc-${s.id}`)} {...ed(L, 'home.services.more')}>
-              {h.services.more}
-            </a>
+            <a class="more text-link" href={siteLink(L, `/services#svc-${s.id}`)} {...ed(L, 'home.services.more')} set:html={textHtml(h.services.more)} />
           </div>
         ))
       }
     </div>
     <div class="note-row">
-      <strong {...ed(L, 'home.services.noteStrong')}>{h.services.noteStrong}</strong>
-      <span {...ed(L, 'home.services.noteText')}>{h.services.noteText}</span>
+      <strong {...ed(L, 'home.services.noteStrong')} set:html={textHtml(h.services.noteStrong)} />
+      <span {...ed(L, 'home.services.noteText')} set:html={textHtml(h.services.noteText)} />
     </div>
   </div>
 </section>
@@ -67,10 +63,10 @@ const h = c.home;
 <section class="band band--ink on-dark">
   <div class="wrap how-grid">
     <div class="stack">
-      <p class="label" {...ed(L, 'home.how.label')}>{h.how.label}</p>
+      <p class="label" {...ed(L, 'home.how.label')} set:html={textHtml(h.how.label)} />
       <h2 class="d-l" {...ed(L, 'home.how.headline', 'rich')} set:html={richHtml(h.how.headline, { emClass: true })} />
-      <p class="lede muted" {...ed(L, 'home.how.lede')}>{h.how.lede}</p>
-      <div><a class="btn btn--outline" href={siteLink(L, '/approach')} {...ed(L, 'home.how.button')}>{h.how.button}</a></div>
+      <p class="lede muted" {...ed(L, 'home.how.lede')} set:html={textHtml(h.how.lede)} />
+      <div><a class="btn btn--outline" href={siteLink(L, '/approach')} {...ed(L, 'home.how.button')} set:html={textHtml(h.how.button)} /></div>
     </div>
     <Steps steps={c.steps} />
   </div>
@@ -80,10 +76,10 @@ const h = c.home;
   <div class="wrap">
     <div class="section-head section-head--split">
       <div class="stack" style="gap:var(--space-2)">
-        <p class="label" {...ed(L, 'home.insights.label')}>{h.insights.label}</p>
+        <p class="label" {...ed(L, 'home.insights.label')} set:html={textHtml(h.insights.label)} />
         <h2 class="d-l" {...ed(L, 'home.insights.headline', 'rich')} set:html={richHtml(h.insights.headline, { emClass: true })} />
       </div>
-      <a class="text-link" href={siteLink(L, '/insights')} style="font-weight:500" {...ed(L, 'home.insights.link')}>{h.insights.link}</a>
+      <a class="text-link" href={siteLink(L, '/insights')} style="font-weight:500" {...ed(L, 'home.insights.link')} set:html={textHtml(h.insights.link)} />
     </div>
     <div class="cards" {...edList(L, 'insights')}>
       {c.insights.map((a, i) => <InsightCard insight={a} index={i} />)}

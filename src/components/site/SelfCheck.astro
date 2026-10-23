@@ -1,7 +1,7 @@
 ---
 import Receipt from './Receipt.astro';
 import { ed, edItem, edList, isEditing, siteContent, siteLink } from '../../lib/editable';
-import { richHtml } from '../../lib/richText';
+import { fill, richHtml, textHtml } from '../../lib/richText';
 import { AREAS } from '../../lib/aviseSchema';
 
 const L = Astro.locals;
@@ -12,35 +12,40 @@ const editing = isEditing(L);
 
 // Empty state, server-rendered so the receipt is there before the script runs.
 const initial = {
-  title: 'Self-check',
-  number: '0 items',
+  title: t.receiptTitle,
+  number: fill(t.countMany, { n: '0' }),
   lines: [
-    { l: 'Pick what sounds familiar', v: '', empty: true },
-    { l: 'Free consult', v: 'S$0.00', hl: true },
+    { l: t.emptyLine, v: '', empty: true },
+    { l: t.consultLine, v: t.consultValue, hl: true },
   ],
-  finding: 'Not sure? That’s <em>normal.</em>',
-  footer: 'A first read, not a diagnosis.',
+  finding: t.findingEmpty,
+  footer: t.receiptFooter,
+};
+// Each of its texts is its own field (the item count is edited in the panel).
+const initialEdit = {
+  title: 'home.selfcheck.receiptTitle',
+  lines: [{ l: 'home.selfcheck.emptyLine' }, { l: 'home.selfcheck.consultLine', v: 'home.selfcheck.consultValue' }],
+  finding: 'home.selfcheck.findingEmpty',
+  footer: 'home.selfcheck.receiptFooter',
 };
 ---
 
 <section class="band band--rose on-rose on-light" id="selfcheck">
   <div class="wrap check-grid">
     <div>
-      <p class="label" {...ed(L, 'home.selfcheck.label')}>{t.label}</p>
+      <p class="label" {...ed(L, 'home.selfcheck.label')} set:html={textHtml(t.label)} />
       <h2 class="d-m" style="margin-top:var(--space-2)" {...ed(L, 'home.selfcheck.headline', 'rich')} set:html={richHtml(t.headline, { emClass: true })} />
-      <p class="lede" style="margin-top:var(--space-3)" {...ed(L, 'home.selfcheck.lede')}>{t.lede}</p>
+      <p class="lede" style="margin-top:var(--space-3)" {...ed(L, 'home.selfcheck.lede')} set:html={textHtml(t.lede)} />
       <div class="options" id="options" role="group" aria-label="Symptoms" {...edList(L, 'symptoms')}>
         {
           symptoms.map((s, i) => (
-            <button type="button" class="opt" data-id={s.id} aria-pressed="false" {...edItem(L, i)} {...ed(L, `symptoms.${i}.label`)}>
-              {s.label}
-            </button>
+            <button type="button" class="opt" data-id={s.id} aria-pressed="false" {...edItem(L, i)} {...ed(L, `symptoms.${i}.label`)} set:html={textHtml(s.label)} />
           ))
         }
       </div>
       <div class="check-actions">
-        <a class="btn btn--forest" href={siteLink(L, '/contact')} id="checkBook" {...ed(L, 'home.selfcheck.book')}>{t.book}</a>
-        <button type="button" class="reset" id="checkReset" {...ed(L, 'home.selfcheck.clear')}>{t.clear}</button>
+        <a class="btn btn--forest" href={siteLink(L, '/contact')} id="checkBook" {...ed(L, 'home.selfcheck.book')} set:html={textHtml(t.book)} />
+        <button type="button" class="reset" id="checkReset" {...ed(L, 'home.selfcheck.clear')} set:html={textHtml(t.clear)} />
       </div>
       {
         editing && (
@@ -64,17 +69,32 @@ const initial = {
                 </label>
               </div>
             ))}
+            <p class="edit-extra__title">Result receipt wording (shown as options are picked)</p>
+            <div class="edit-extra__row">
+              <label>One option: <span data-edit="home.selfcheck.countOne" data-edit-kind="text">{t.countOne}</span></label>
+              <label>Several ({'{n}'} is the count): <span data-edit="home.selfcheck.countMany" data-edit-kind="text">{t.countMany}</span></label>
+            </div>
+            <div class="edit-extra__row">
+              <label>Picks from different areas: <span data-edit="home.selfcheck.findingMixed" data-edit-kind="rich" set:html={richHtml(t.findingMixed)} /></label>
+            </div>
+            {AREAS.map((a) => (
+              <div class="edit-extra__row">
+                <label>Area name: <span data-edit={`areas.${a}`} data-edit-kind="text">{areas[a]}</span></label>
+                <label>Its finding: <span data-edit={`findings.${a}`} data-edit-kind="rich" set:html={richHtml(findings[a])} /></label>
+              </div>
+            ))}
           </div>
         )
       }
     </div>
-    <Receipt id="checkReceipt" variant="rose" live label="Your self-check receipt" data={initial} />
+    <Receipt id="checkReceipt" variant="rose" live label="Your self-check receipt" data={initial} editPath={initialEdit} />
   </div>
-  <script type="application/json" id="selfcheckData" set:html={JSON.stringify({ symptoms, areas, findings }).replace(/</g, '\\u003c')} />
+  <script type="application/json" id="selfcheckData" set:html={JSON.stringify({ symptoms, areas, findings, t }).replace(/</g, '\\u003c')} />
 </section>
 
 <script>
   import { receiptHTML, type ReceiptLine } from '../../lib/receipt';
+  import { fill } from '../../lib/richText';
   import { PREFILL_KEY } from '../../lib/prefill';
 
   type Area = 'profit' | 'ops' | 'market';
@@ -82,7 +102,11 @@ const initial = {
   // The editor renders this section to edit its text: no interactivity there.
   const editingPage = document.documentElement.hasAttribute('data-editing');
 
-  const data: { symptoms: Symptom[]; areas: Record<Area, string>; findings: Record<Area, string> } = JSON.parse(
+  type Wording = Record<
+    'receiptTitle' | 'countOne' | 'countMany' | 'emptyLine' | 'consultLine' | 'consultValue' | 'findingEmpty' | 'findingMixed' | 'receiptFooter',
+    string
+  >;
+  const data: { symptoms: Symptom[]; areas: Record<Area, string>; findings: Record<Area, string>; t: Wording } = JSON.parse(
     document.getElementById('selfcheckData')!.textContent!
   );
 
@@ -98,8 +122,8 @@ const initial = {
     const list = chosen();
     const lines: ReceiptLine[] = list.length
       ? list.map((s) => ({ l: s.fix, v: data.areas[s.area] }))
-      : [{ l: 'Pick what sounds familiar', v: '', empty: true }];
-    lines.push({ l: 'Free consult', v: 'S$0.00', hl: true });
+      : [{ l: data.t.emptyLine, v: '', empty: true }];
+    lines.push({ l: data.t.consultLine, v: data.t.consultValue, hl: true });
     const counts: Partial<Record<Area, number>> = {};
     list.forEach((s) => {
       counts[s.area] = (counts[s.area] || 0) + 1;
@@ -107,16 +131,16 @@ const initial = {
     const areaKeys = Object.keys(counts) as Area[];
     const top = areaKeys.sort((a, b) => counts[b]! - counts[a]!)[0];
     const finding = !list.length
-      ? 'Not sure? That’s <em>normal.</em>'
+      ? data.t.findingEmpty
       : areaKeys.length > 1 && counts[top] === 1
-        ? 'Several threads. We’ll find the <em>knot.</em>'
+        ? data.t.findingMixed
         : data.findings[top];
     receiptEl.innerHTML = receiptHTML({
-      title: 'Self-check',
-      number: list.length + ' item' + (list.length === 1 ? '' : 's'),
+      title: data.t.receiptTitle,
+      number: list.length === 1 ? data.t.countOne : fill(data.t.countMany, { n: String(list.length) }),
       lines,
       finding,
-      footer: 'A first read, not a diagnosis.',
+      footer: data.t.receiptFooter,
     });
   }
 

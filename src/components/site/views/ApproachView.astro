@@ -2,7 +2,7 @@
 import Steps from '../Steps.astro';
 import Principles from '../Principles.astro';
 import { ed, siteContent } from '../../../lib/editable';
-import { richHtml } from '../../../lib/richText';
+import { richHtml, textHtml } from '../../../lib/richText';
 
 const L = Astro.locals;
 const c = siteContent(L);
@@ -11,17 +11,15 @@ const p = c.approachPage;
 
 <section class="band band--forest band--tight on-dark">
   <div class="wrap page-hero">
-    <p class="label" {...ed(L, 'approachPage.label')}>{p.label}</p>
+    <p class="label" {...ed(L, 'approachPage.label')} set:html={textHtml(p.label)} />
     <h1 class="d-xl" {...ed(L, 'approachPage.headline', 'rich')} set:html={richHtml(p.headline, { emClass: true })} />
-    <p class="lede" {...ed(L, 'approachPage.lede')}>
-      {p.lede}
-    </p>
+    <p class="lede" {...ed(L, 'approachPage.lede')} set:html={textHtml(p.lede)} />
   </div>
 </section>
 <section class="band band--ink on-dark">
   <div class="wrap how-grid">
     <div class="stack">
-      <p class="label" {...ed(L, 'approachPage.stepsLabel')}>{p.stepsLabel}</p>
+      <p class="label" {...ed(L, 'approachPage.stepsLabel')} set:html={textHtml(p.stepsLabel)} />
       <h2 class="d-l" {...ed(L, 'approachPage.stepsHeadline', 'rich')} set:html={richHtml(p.stepsHeadline, { emClass: true })} />
     </div>
     <Steps steps={c.steps} />
@@ -30,7 +28,7 @@ const p = c.approachPage;
 <section class="band band--paper on-light">
   <div class="wrap">
     <div class="section-head">
-      <p class="label" {...ed(L, 'approachPage.staysLabel')}>{p.staysLabel}</p>
+      <p class="label" {...ed(L, 'approachPage.staysLabel')} set:html={textHtml(p.staysLabel)} />
       <h2 class="d-l" {...ed(L, 'approachPage.staysHeadline', 'rich')} set:html={richHtml(p.staysHeadline, { emClass: true })} />
     </div>
     <Principles principles={c.principles} />

@@ -1,12 +1,15 @@
 ---
+import { content } from '../lib/aviseContent';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import ServicesView from '../components/site/views/ServicesView.astro';
+
+const { meta } = content;
 ---
 
 <SiteLayout
-  title="What we do"
+  title={meta.services.title}
+  description={meta.services.description}
   current="services"
-  description="Strategy you can actually use. Three areas, each scoped to a clear deliverable you can run without us."
 >
   <ServicesView />
 </SiteLayout>

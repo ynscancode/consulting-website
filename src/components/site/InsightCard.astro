@@ -1,4 +1,5 @@
 ---
+import { textHtml } from '../../lib/richText';
 import { ed, edItem, siteContent, siteLink } from '../../lib/editable';
 import type { Insight } from '../../lib/aviseContent';
 
@@ -19,7 +20,7 @@ const footer = siteContent(L).insightsPage.cardFooter;
   data-sector={insight.sector}
   {...edItem(L, index)}
 >
-  <span class="card__meta" {...ed(L, `insights.${index}.meta`)}>{insight.meta}</span>
-  <span class="card__headline" {...ed(L, `insights.${index}.headline`)}>{insight.headline}</span>
+  <span class="card__meta" {...ed(L, `insights.${index}.meta`)} set:html={textHtml(insight.meta)} />
+  <span class="card__headline" {...ed(L, `insights.${index}.headline`)} set:html={textHtml(insight.headline)} />
   <span class="card__footer">{footer}</span>
 </a>

@@ -10,6 +10,6 @@ export function getStaticPaths() {
 const { insight, index } = Astro.props as { insight: Insight; index: number };
 ---
 
-<SiteLayout title={insight.headline} current="insights" ground="paper" description={insight.lede}>
+<SiteLayout title={`${insight.headline} · Avisé & Co.`} current="insights" ground="paper" description={insight.lede}>
   <ArticleView insight={insight} index={index} />
 </SiteLayout>
