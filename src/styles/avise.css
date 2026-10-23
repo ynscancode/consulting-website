@@ -117,9 +117,18 @@ a { color: inherit; text-underline-offset: 3px; }
 .site-header .wordmark { color: var(--hdr-fg); }
 .site-header .wordmark .amp { color: var(--hdr-amp); }
 .site-header .nav-cta { background: var(--hdr-cta-bg); color: var(--hdr-cta-fg); border-color: transparent; }
-.nav-cta { transition: opacity .2s, visibility .2s; }
+.nav-cta { transition: opacity .3s ease, visibility .3s ease; }
 .site-header[data-cta="off"] .nav-cta { opacity: 0; visibility: hidden; }
-.site-header[data-cta="none"] .nav-cta { display: none; }
+.site-header[data-cta="none"] .nav-cta-slot { display: none; }
+/* The call to action sits in a slot that closes to nothing while it's hidden
+   (top of the home page), so the links sit flush right as on the contact page,
+   then opens to the button's measured width (--cta-w, set by SiteHeader) as it
+   fades back in. 6px of padding keeps the focus ring inside the clip; the
+   negative margins cancel it, and the nav's gap when closed. */
+.nav-cta-slot { display: flex; flex: none; overflow: hidden; padding: 6px; margin: -6px; transition: width .3s ease, margin-left .3s ease; }
+.nav-cta-slot > .nav-cta { flex: none; }
+.site-header[data-cta="off"] .nav-cta-slot { width: 12px; margin-left: calc(-6px - var(--space-4)); }
+.site-header[data-cta-measured][data-cta="on"] .nav-cta-slot { width: calc(var(--cta-w) + 12px); }
 .header-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); min-height: 72px; }
 .wordmark { font-family: var(--font-display); font-size: 30px; line-height: 1; letter-spacing: -0.015em; white-space: nowrap; text-decoration: none; color: var(--paper); }
 .wordmark .amp { font-style: italic; color: var(--rose); }
@@ -137,6 +146,8 @@ a { color: inherit; text-underline-offset: 3px; }
   .nav a.nav-link { padding: 14px 0; border-bottom: var(--stroke-rule) solid var(--hdr-rule); font-size: 19px; }
   .nav .btn { margin-top: var(--space-3); align-self: flex-start; }
   .site-header[data-cta="off"] .nav-cta { opacity: 1; visibility: visible; }
+  /* In the phone menu the button is a plain menu item: no slot, no closing. */
+  .nav-cta-slot { display: contents; }
 }
 
 /* Hero */
