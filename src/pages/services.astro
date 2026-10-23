@@ -1,9 +1,6 @@
 ---
 import SiteLayout from '../layouts/SiteLayout.astro';
-import Faq from '../components/site/Faq.astro';
-import { content } from '../lib/aviseContent';
-
-const { services, faqServices } = content;
+import ServicesView from '../components/site/views/ServicesView.astro';
 ---
 
 <SiteLayout
@@ -11,76 +8,5 @@ const { services, faqServices } = content;
   current="services"
   description="Strategy you can actually use. Three areas, each scoped to a clear deliverable you can run without us."
 >
-  <section class="band band--forest band--tight on-dark">
-    <div class="wrap page-hero">
-      <p class="label">What we do</p>
-      <h1 class="d-xl">Strategy you can actually <em class="em">use.</em></h1>
-      <p class="lede">Three areas, each scoped to a clear deliverable you can run without us.</p>
-    </div>
-  </section>
-  <section class="band band--paper on-light">
-    <div class="wrap">
-      <div>
-        {
-          services.map((s) => (
-            <div class="detail" id={`svc-${s.id}`}>
-              <div class="stack">
-                <h2 class="d-m">{s.name}</h2>
-                <p class="lede" style="font-size:19px;color:var(--ink-muted)">
-                  {s.short}
-                </p>
-              </div>
-              <div class="detail__cols">
-                <div>
-                  <h3>Call us when</h3>
-                  <ul class="ticks">
-                    {s.when.map((i) => (
-                      <li>{i}</li>
-                    ))}
-                  </ul>
-                </div>
-                <div>
-                  <h3>What you get</h3>
-                  <ul class="ticks">
-                    {s.get.map((i) => (
-                      <li>{i}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </div>
-          ))
-        }
-      </div>
-      <div class="dont">
-        <div class="stack">
-          <p class="label">What we don't do</p>
-          <h2 class="d-m">We advise. We don't <em class="em">produce.</em></h2>
-        </div>
-        <div class="stack">
-          <ul class="struck">
-            <li>Design your posts or shoot your content</li>
-            <li>Run your ads or manage your accounts</li>
-            <li>Sell you software you didn't need</li>
-          </ul>
-          <p class="body-s muted">
-            We'll tell you what to post, where, and for whom. Making it stays with you or the people you already work with.
-          </p>
-        </div>
-      </div>
-    </div>
-  </section>
-  <section class="band band--paper on-light" style="padding-top:0">
-    <div class="wrap split">
-      <div class="stack">
-        <p class="label">Pricing</p>
-        <h2 class="d-m">Quoted per project, after the <em class="em">consult.</em></h2>
-        <p class="body-s muted">
-          We scope the fix first, then quote a fixed fee for it. When cash is tight, we look for savings before anything that
-          costs you more. Rates are agreed per engagement and kept between us.
-        </p>
-      </div>
-      <Faq items={faqServices} />
-    </div>
-  </section>
+  <ServicesView />
 </SiteLayout>

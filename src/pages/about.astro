@@ -1,34 +1,8 @@
 ---
 import SiteLayout from '../layouts/SiteLayout.astro';
-import Principles from '../components/site/Principles.astro';
-import { content } from '../lib/aviseContent';
-
-const { principles } = content;
+import AboutView from '../components/site/views/AboutView.astro';
 ---
 
 <SiteLayout title="About" current="about" description="Who you'd be hiring: Avisé & Co., practical strategy for Singapore small businesses.">
-  <section class="band band--forest band--tight on-dark">
-    <div class="wrap page-hero">
-      <p class="label">About</p>
-      <h1 class="d-xl">Who you'd be <em class="em">hiring.</em></h1>
-    </div>
-  </section>
-  <section class="band band--paper on-light">
-    <div class="wrap split">
-      <div class="photo" role="img" aria-label="Photo placeholder">[Photo]</div>
-      <div class="stack-l">
-        <div class="stack">
-          <p class="lede">
-            Avisé &amp; Co. is run by [founder name], [one line on background]. We started it because most advice for small
-            businesses is either generic growth tips or priced for companies ten times their size.
-          </p>
-          <p class="body-s muted">
-            We work with owner-operators across retail, F&amp;B, beauty and services. The work is strategy and operations:
-            pricing, process, positioning and market checks, sized to what one owner can run.
-          </p>
-        </div>
-        <Principles principles={principles} single />
-      </div>
-    </div>
-  </section>
+  <AboutView />
 </SiteLayout>

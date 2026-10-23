@@ -1,38 +1,15 @@
 ---
 import SiteLayout from '../../layouts/SiteLayout.astro';
-import Receipt from '../../components/site/Receipt.astro';
+import ArticleView from '../../components/site/views/ArticleView.astro';
 import { content, type Insight } from '../../lib/aviseContent';
 
 export function getStaticPaths() {
-  return content.insights.map((insight) => ({ params: { slug: insight.id }, props: { insight } }));
+  return content.insights.map((insight, index) => ({ params: { slug: insight.id }, props: { insight, index } }));
 }
 
-const { insight } = Astro.props as { insight: Insight };
-
-// Body entries starting with "## " are subheadings; the receipt figure goes
-// after the second block, as in the reference design.
-const blocks = insight.body.map((p) =>
-  p.startsWith('## ') ? { kind: 'h2' as const, text: p.slice(3) } : { kind: 'p' as const, text: p }
-);
-const before = blocks.slice(0, 2);
-const after = blocks.slice(2);
+const { insight, index } = Astro.props as { insight: Insight; index: number };
 ---
 
 <SiteLayout title={insight.headline} current="insights" ground="paper" description={insight.lede}>
-  <section class="band band--paper on-light">
-    <div class="wrap">
-      <article class="article">
-        <a class="back text-link" href="/insights">← All insights</a>
-        <p class="label">{insight.meta}</p>
-        <h1 class="d-m">{insight.headline}</h1>
-        <p class="lede" style="color:var(--ink-muted)">{insight.lede}</p>
-        <p class="draft-note">Draft. Figures in [brackets] are placeholders until the analysis is done.</p>
-        {before.map((b) => (b.kind === 'h2' ? <h2>{b.text}</h2> : <p>{b.text}</p>))}
-        <div class="figure">
-          <Receipt variant="dark" data={insight.receipt} />
-        </div>
-        {after.map((b) => (b.kind === 'h2' ? <h2>{b.text}</h2> : <p>{b.text}</p>))}
-      </article>
-    </div>
-  </section>
+  <ArticleView insight={insight} index={index} />
 </SiteLayout>

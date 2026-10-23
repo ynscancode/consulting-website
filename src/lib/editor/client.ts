@@ -100,21 +100,6 @@ export async function saveArea(area: string, body: unknown): Promise<SaveResult>
   return { ok: true, commitSha: data?.commitSha };
 }
 
-export async function deleteBlogPost(slug: string): Promise<SaveResult> {
-  await ensureDraft();
-  const res = await fetch('/api/content/blog', {
-    method: 'DELETE',
-    headers: { 'content-type': 'application/json', 'X-CSRF-Token': getCsrfToken() },
-    body: JSON.stringify({ slug }),
-  });
-  if (!res.ok) {
-    const data = await parseJsonSafe<{ error?: string; action?: string }>(res);
-    checkReauthNeeded(res.status, data);
-    return { ok: false, error: data?.error ?? `http_${res.status}`, action: data?.action };
-  }
-  return { ok: true };
-}
-
 export type PreviewSyncState = 'synced' | 'already-current' | 'conflict';
 
 export type PreviewResult = {
@@ -274,38 +259,6 @@ export function debounce<Args extends unknown[]>(
     if (timer) clearTimeout(timer);
     timer = setTimeout(() => fn(...args), ms);
   };
-}
-
-/** Matches the server-side slug regex in src/lib/schemas.ts
- * (^[a-z0-9]+(-[a-z0-9]+)*$) so client-generated slugs always pass
- * validation on save. */
-export function slugify(input: string): string {
-  const base = input
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 100);
-  return base.length > 0 ? base : `untitled-${Date.now().toString(36)}`;
-}
-
-export function uniqueId(): string {
-  return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-}
-
-/** The Hero headline is the one field rendered with `set:html` (raw,
- * unescaped) — see senior-backend-dev-20260716T030500 XSS note. Strip
- * everything except <br> before it ever reaches the network so a pasted
- * <script>/<img onerror> etc. can't survive the round trip even though the
- * editor is single-owner. Defense in depth alongside the server's
- * length-capped (not HTML-aware) Zod validation. */
-export function sanitizeHeadlineHtml(rawHtml: string): string {
-  const BR_PLACEHOLDER = ' BR ';
-  return rawHtml
-    .replace(/<br\s*\/?>/gi, BR_PLACEHOLDER)
-    .replace(/<[^>]*>/g, '')
-    .split(BR_PLACEHOLDER)
-    .join('<br>');
 }
 
 /** Dot-path get/set into a plain object/array tree, e.g. "primaryCta.href"
@@ -527,7 +480,7 @@ export function makeAutosaver({
       setStatus('retrying');
       scheduleRetry();
     } else if (result.error === 'csrf_invalid') {
-      // saveArea()/deleteBlogPost() already dispatched the EXISTING
+      // saveArea() already dispatched the EXISTING
       // editor:reauth-needed event (unchanged behavior) — EditorHarness
       // owns the "Session expired" status text for that case, so don't
       // fight it with a generic "Save failed" broadcast. Still track the
