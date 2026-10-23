@@ -427,6 +427,12 @@
       "area": "profit"
     },
     {
+      "id": "symptom-mvkfwhgu",
+      "label": "A new symptom",
+      "fix": "What we would look at",
+      "area": "profit"
+    },
+    {
       "id": "margin",
       "label": "Busy months still leave thin margins",
       "fix": "Pricing and costs",
