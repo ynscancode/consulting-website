@@ -1,4 +1,6 @@
 ---
+import { ed, siteContent, siteLink } from '../../lib/editable';
+
 export type NavKey = 'services' | 'approach' | 'insights' | 'about';
 export type Ground = 'forest' | 'paper' | 'rose' | 'ink';
 
@@ -11,6 +13,7 @@ export type Props = {
 };
 
 const { current, ground = 'forest', hideCta = false } = Astro.props;
+const c = siteContent(Astro.locals);
 
 const links: { key: NavKey; href: string; label: string }[] = [
   { key: 'services', href: '/services', label: 'What we do' },
@@ -22,17 +25,17 @@ const links: { key: NavKey; href: string; label: string }[] = [
 
 <header class="site-header on-dark" data-ground={ground} data-cta={hideCta ? 'none' : 'off'}>
   <div class="wrap header-row">
-    <a class="wordmark" href="/" aria-label="Avisé & Co., home">Avisé <span class="amp" aria-hidden="true">&amp;</span> Co.</a>
+    <a class="wordmark" href={siteLink(Astro.locals, '/')} aria-label="Avisé & Co., home">Avisé <span class="amp" aria-hidden="true">&amp;</span> Co.</a>
     <button class="menu-btn" id="menuBtn" aria-expanded="false" aria-controls="siteNav">Menu</button>
     <nav class="nav" id="siteNav" aria-label="Main">
       {
         links.map((link) => (
-          <a class="nav-link" href={link.href} aria-current={link.key === current ? 'page' : undefined}>
+          <a class="nav-link" href={siteLink(Astro.locals, link.href)} aria-current={link.key === current ? 'page' : undefined}>
             {link.label}
           </a>
         ))
       }
-      <a class="btn btn--act btn--sm nav-cta" href="/contact">Free consult</a>
+      <a class="btn btn--act btn--sm nav-cta" href={siteLink(Astro.locals, '/contact')} {...ed(Astro.locals, 'header.cta')}>{c.header.cta}</a>
     </nav>
   </div>
 </header>

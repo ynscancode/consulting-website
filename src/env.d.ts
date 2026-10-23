@@ -3,6 +3,10 @@
 declare namespace App {
   interface Locals {
     session: import('./lib/session').SessionPayload | null;
+    /** Set by the /edit route: page views render their edit hooks. */
+    editing?: boolean;
+    /** Set by the /edit route: the draft content to render instead of the build-time file. */
+    aviseContent?: import('./lib/aviseSchema').AviseContent;
   }
 }
 

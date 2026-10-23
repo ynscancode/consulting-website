@@ -1,0 +1,79 @@
+---
+import Faq from '../Faq.astro';
+import { ed, edItem, edList, siteContent } from '../../../lib/editable';
+import { richHtml } from '../../../lib/richText';
+
+const L = Astro.locals;
+const c = siteContent(L);
+const p = c.servicesPage;
+---
+
+<section class="band band--forest band--tight on-dark">
+  <div class="wrap page-hero">
+    <p class="label" {...ed(L, 'servicesPage.label')}>{p.label}</p>
+    <h1 class="d-xl" {...ed(L, 'servicesPage.headline', 'rich')} set:html={richHtml(p.headline, { emClass: true })} />
+    <p class="lede" {...ed(L, 'servicesPage.lede')}>{p.lede}</p>
+  </div>
+</section>
+<section class="band band--paper on-light">
+  <div class="wrap">
+    <div>
+      {
+        c.services.map((s, i) => (
+          <div class="detail" id={`svc-${s.id}`}>
+            <div class="stack">
+              <h2 class="d-m" {...ed(L, `services.${i}.name`)}>{s.name}</h2>
+              <p class="lede" style="font-size:19px;color:var(--ink-muted)" {...ed(L, `services.${i}.short`)}>
+                {s.short}
+              </p>
+            </div>
+            <div class="detail__cols">
+              <div>
+                <h3 {...ed(L, 'servicesPage.whenTitle')}>{p.whenTitle}</h3>
+                <ul class="ticks" {...edList(L, `services.${i}.when`)}>
+                  {s.when.map((item, j) => (
+                    <li {...edItem(L, j)} {...ed(L, `services.${i}.when.${j}`)}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h3 {...ed(L, 'servicesPage.getTitle')}>{p.getTitle}</h3>
+                <ul class="ticks" {...edList(L, `services.${i}.get`)}>
+                  {s.get.map((item, j) => (
+                    <li {...edItem(L, j)} {...ed(L, `services.${i}.get.${j}`)}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        ))
+      }
+    </div>
+    <div class="dont">
+      <div class="stack">
+        <p class="label" {...ed(L, 'servicesPage.dontLabel')}>{p.dontLabel}</p>
+        <h2 class="d-m" {...ed(L, 'servicesPage.dontHeadline', 'rich')} set:html={richHtml(p.dontHeadline, { emClass: true })} />
+      </div>
+      <div class="stack">
+        <ul class="struck" {...edList(L, 'servicesPage.dont')}>
+          {p.dont.map((item, j) => <li {...edItem(L, j)} {...ed(L, `servicesPage.dont.${j}`)}>{item}</li>)}
+        </ul>
+        <p class="body-s muted" {...ed(L, 'servicesPage.dontNote')}>
+          {p.dontNote}
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="band band--paper on-light" style="padding-top:0">
+  <div class="wrap split">
+    <div class="stack">
+      <p class="label" {...ed(L, 'servicesPage.pricingLabel')}>{p.pricingLabel}</p>
+      <h2 class="d-m" {...ed(L, 'servicesPage.pricingHeadline', 'rich')} set:html={richHtml(p.pricingHeadline, { emClass: true })} />
+      <p class="body-s muted" {...ed(L, 'servicesPage.pricingBody')}>
+        {p.pricingBody}
+      </p>
+    </div>
+    <Faq items={c.faqServices} path="faqServices" />
+  </div>
+</section>

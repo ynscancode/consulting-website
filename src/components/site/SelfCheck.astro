@@ -1,14 +1,14 @@
 ---
 import Receipt from './Receipt.astro';
-import type { AviseContent } from '../../lib/aviseContent';
+import { ed, edItem, edList, isEditing, siteContent, siteLink } from '../../lib/editable';
+import { richHtml } from '../../lib/richText';
+import { AREAS } from '../../lib/aviseSchema';
 
-export type Props = {
-  symptoms: AviseContent['symptoms'];
-  areas: AviseContent['areas'];
-  findings: AviseContent['findings'];
-};
-
-const { symptoms, areas, findings } = Astro.props;
+const L = Astro.locals;
+const c = siteContent(L);
+const { symptoms, areas, findings } = c;
+const t = c.home.selfcheck;
+const editing = isEditing(L);
 
 // Empty state, server-rendered so the receipt is there before the script runs.
 const initial = {
@@ -26,24 +26,47 @@ const initial = {
 <section class="band band--rose on-rose on-light" id="selfcheck">
   <div class="wrap check-grid">
     <div>
-      <p class="label">Two-minute self-check</p>
-      <h2 class="d-m" style="margin-top:var(--space-2)">Where does it <em class="em">hurt?</em></h2>
-      <p class="lede" style="margin-top:var(--space-3)">
-        Tap whatever sounds familiar. You don't need to know the cause. Finding it is our job.
-      </p>
-      <div class="options" id="options" role="group" aria-label="Symptoms">
+      <p class="label" {...ed(L, 'home.selfcheck.label')}>{t.label}</p>
+      <h2 class="d-m" style="margin-top:var(--space-2)" {...ed(L, 'home.selfcheck.headline', 'rich')} set:html={richHtml(t.headline, { emClass: true })} />
+      <p class="lede" style="margin-top:var(--space-3)" {...ed(L, 'home.selfcheck.lede')}>{t.lede}</p>
+      <div class="options" id="options" role="group" aria-label="Symptoms" {...edList(L, 'symptoms')}>
         {
-          symptoms.map((s) => (
-            <button type="button" class="opt" data-id={s.id} aria-pressed="false">
+          symptoms.map((s, i) => (
+            <button type="button" class="opt" data-id={s.id} aria-pressed="false" {...edItem(L, i)} {...ed(L, `symptoms.${i}.label`)}>
               {s.label}
             </button>
           ))
         }
       </div>
       <div class="check-actions">
-        <a class="btn btn--forest" href="/contact" id="checkBook">Book a consult about this</a>
-        <button type="button" class="reset" id="checkReset">Clear</button>
+        <a class="btn btn--forest" href={siteLink(L, '/contact')} id="checkBook" {...ed(L, 'home.selfcheck.book')}>{t.book}</a>
+        <button type="button" class="reset" id="checkReset" {...ed(L, 'home.selfcheck.clear')}>{t.clear}</button>
       </div>
+      {
+        editing && (
+          <div class="edit-extra" data-edit-extra>
+            <p class="edit-extra__title">Self-check answers (not shown on the page)</p>
+            {symptoms.map((s, i) => (
+              <div class="edit-extra__row">
+                <span class="edit-extra__name">{s.label}</span>
+                <label>
+                  Suggests <span data-edit={`symptoms.${i}.fix`} data-edit-kind="text">{s.fix}</span>
+                </label>
+                <label>
+                  Area{' '}
+                  <select data-edit={`symptoms.${i}.area`} data-edit-kind="select">
+                    {AREAS.map((a) => (
+                      <option value={a} selected={a === s.area}>
+                        {areas[a]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            ))}
+          </div>
+        )
+      }
     </div>
     <Receipt id="checkReceipt" variant="rose" live label="Your self-check receipt" data={initial} />
   </div>
@@ -56,6 +79,9 @@ const initial = {
 
   type Area = 'profit' | 'ops' | 'market';
   type Symptom = { id: string; label: string; fix: string; area: Area };
+  // The editor renders this section to edit its text: no interactivity there.
+  const editingPage = document.documentElement.hasAttribute('data-editing');
+
   const data: { symptoms: Symptom[]; areas: Record<Area, string>; findings: Record<Area, string> } = JSON.parse(
     document.getElementById('selfcheckData')!.textContent!
   );
@@ -94,7 +120,7 @@ const initial = {
     });
   }
 
-  options.addEventListener('click', (e) => {
+  if (!editingPage) options.addEventListener('click', (e) => {
     const b = (e.target as Element).closest('.opt');
     if (!b) return;
     const id = b.getAttribute('data-id')!;
@@ -103,14 +129,14 @@ const initial = {
     renderCheck();
   });
 
-  document.getElementById('checkReset')!.addEventListener('click', () => {
+  if (!editingPage) document.getElementById('checkReset')!.addEventListener('click', () => {
     picked = {};
     options.querySelectorAll('.opt').forEach((b) => b.setAttribute('aria-pressed', 'false'));
     renderCheck();
   });
 
   // Carry the picks over to the contact form's "What's going on?" field.
-  document.getElementById('checkBook')!.addEventListener('click', () => {
+  if (!editingPage) document.getElementById('checkBook')!.addEventListener('click', () => {
     const list = chosen();
     try {
       if (list.length) {

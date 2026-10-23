@@ -1,49 +1,59 @@
 ---
-// Shell for every /edit/** page. Deliberately shares NO module with the public
-// site: it imports only the global editor sheet (src/styles/editor.css, which
-// inlines tokens.css + site.css) so the public build's chunking and compiled
-// CSS stay byte-identical. The head mirrors SiteLayout.astro (favicons, fonts)
-// — keep them in sync by hand.
+// Shell for every /edit/** page. Renders the SAME header, footer and page
+// views as the public site (src/layouts/SiteLayout.astro), so the editor
+// looks exactly like the live site, plus the editing toolbar and the
+// editor-only stylesheet. Keep the <head> in sync with SiteLayout by hand.
+import '../styles/avise.css';
 import '../styles/editor.css';
+import SiteHeader from '../components/site/SiteHeader.astro';
+import SiteFooter from '../components/site/SiteFooter.astro';
+import type { NavKey, Ground } from '../components/site/SiteHeader.astro';
 
 export type Props = {
   title: string;
+  current?: NavKey;
+  ground?: Ground;
+  showCta?: boolean;
+  /** Editor page key: labels the save commit / history badge. */
+  page: string;
+  /** False on screens that aren't a site page (version history). */
+  sitePage?: boolean;
+  readonly?: boolean;
 };
 
-const { title } = Astro.props;
-const year = new Date().getFullYear();
+const { title, current, ground = 'forest', showCta = true, page, sitePage = true, readonly = false } = Astro.props;
+const seed = JSON.stringify({ content: Astro.locals.aviseContent, page, readonly }).replace(/</g, '\\u003c');
 ---
 
-<html lang="en">
+<html lang="en-SG" data-editing>
   <head>
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="icon" href="/favicon.ico" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="generator" content={Astro.generator} />
-
-    <title>{title} · Isaiah Ho</title>
-    <meta name="description" content="Isaiah Ho — content editor (private)." />
+    <meta name="theme-color" content="#1e4d37" />
     <meta name="robots" content="noindex, nofollow" />
+    <title>{title} · Editing · Avisé & Co.</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;0,7..72,600;1,7..72,400&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&display=swap"
     />
   </head>
-  <body class="editor-root">
-    <a class="skip-link" href="#main-content">Skip to main content</a>
-    <slot />
-    <div class="dark floor">
-      <div class="wrap">
-        <footer class="site-footer">
-          <span>&copy; {year} Isaiah Ho</span>
-          <span>Editor</span>
-        </footer>
-      </div>
-    </div>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <SiteHeader current={current} ground={ground} hideCta={!showCta} />
+    <main id="main">
+      <slot />
+    </main>
+    {sitePage && <SiteFooter showCta={showCta} />}
+    <div class="toast" id="toast" role="status" hidden></div>
     <slot name="editor-toolbar" />
+    {sitePage && <script type="application/json" id="editorSeed" set:html={seed} />}
+    <script>
+      import '../lib/editor/surface';
+    </script>
   </body>
 </html>

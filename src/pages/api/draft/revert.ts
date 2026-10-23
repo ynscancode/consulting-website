@@ -9,7 +9,7 @@ import {
   GitHubApiError,
 } from '../../../lib/github';
 import { getRepoRef, getDraftBranch, getWriteToken, COMMIT_AUTHOR } from '../../../lib/gitConfig';
-import { SITE_JSON_PATH, PROJECTS_JSON_PATH, EXPERIENCE_JSON_PATH, BLOG_DIR } from '../../../lib/contentPaths';
+import { AVISE_JSON_PATH } from '../../../lib/contentPaths';
 
 export const prerender = false;
 
@@ -37,21 +37,13 @@ function errorResponse(error: string, status: number, extra?: Record<string, unk
  * (contentPaths.ts constants), so revert can never write anywhere the
  * normal editor save path couldn't already write. */
 function isWhitelistedPath(path: string): boolean {
-  if (path === SITE_JSON_PATH || path === PROJECTS_JSON_PATH || path === EXPERIENCE_JSON_PATH) return true;
-  return path.startsWith(BLOG_DIR) && path.endsWith('.md') && !path.includes('..');
+  return path === AVISE_JSON_PATH;
 }
 
 /** Commit message for the new forward commit, in the same
- * "Update <area> content" / "Update blog post: <slug>" family so the
- * client's existing message-prefix area-badge parser can be extended with a
- * matching "Revert ..." prefix (tech-lead §C7). */
-function buildRevertMessage(path: string, targetSha: string): string {
-  const shortSha = targetSha.slice(0, 7);
-  if (path === SITE_JSON_PATH) return `Revert site content to ${shortSha}`;
-  if (path === PROJECTS_JSON_PATH) return `Revert projects content to ${shortSha}`;
-  if (path === EXPERIENCE_JSON_PATH) return `Revert experience content to ${shortSha}`;
-  const slug = path.slice(BLOG_DIR.length).replace(/\.md$/, '');
-  return `Revert blog post ${slug} to ${shortSha}`;
+ * "Update <page> content" family the history view's badge parser reads. */
+function buildRevertMessage(_path: string, targetSha: string): string {
+  return `Revert site content to ${targetSha.slice(0, 7)}`;
 }
 
 export const POST: APIRoute = async ({ request }) => {

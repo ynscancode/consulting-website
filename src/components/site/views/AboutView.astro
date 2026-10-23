@@ -1,0 +1,61 @@
+---
+import Principles from '../Principles.astro';
+import { ed, isEditing, siteContent } from '../../../lib/editable';
+import { escapeHtml, richHtml } from '../../../lib/richText';
+
+const L = Astro.locals;
+const c = siteContent(L);
+const p = c.aboutPage;
+const editing = isEditing(L);
+// The editor previews an uploaded photo from the draft branch (not yet deployed).
+const imageSrc = p.image ? (editing ? `/api/draft/asset?path=${encodeURIComponent(p.image)}` : p.image) : null;
+const photoHtml = imageSrc
+  ? `<div class="photo photo--filled" id="aboutPhoto"><img src="${escapeHtml(imageSrc)}" alt=""></div>`
+  : '<div class="photo" role="img" aria-label="Photo placeholder">[Photo]</div>';
+---
+
+<section class="band band--forest band--tight on-dark">
+  <div class="wrap page-hero">
+    <p class="label" {...ed(L, 'aboutPage.label')}>{p.label}</p>
+    <h1 class="d-xl" {...ed(L, 'aboutPage.headline', 'rich')} set:html={richHtml(p.headline, { emClass: true })} />
+  </div>
+</section>
+<section class="band band--paper on-light">
+  <div class="wrap split">
+    {
+      editing ? (
+        <div>
+          <Fragment set:html={photoHtml} />
+          <div class="edit-extra" data-edit-extra data-about-photo={p.image ?? ''}>
+            <p class="edit-extra__title">Photo</p>
+            <input type="file" id="aboutPhotoInput" accept="image/jpeg,image/png,image/webp" hidden />
+            <div class="edit-extra__actions">
+              <button type="button" class="edit-btn" id="aboutPhotoUpload">{p.image ? 'Replace photo' : 'Upload photo'}</button>
+              {p.image && (
+                <button type="button" class="edit-btn edit-btn--quiet" id="aboutPhotoRemove">
+                  Remove photo
+                </button>
+              )}
+            </div>
+            <p class="edit-extra__note" id="aboutPhotoStatus" role="status" aria-live="polite">
+              JPEG, PNG or WebP under 2 MB.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <Fragment set:html={photoHtml} />
+      )
+    }
+    <div class="stack-l">
+      <div class="stack">
+        <p class="lede" {...ed(L, 'aboutPage.lede')}>
+          {p.lede}
+        </p>
+        <p class="body-s muted" {...ed(L, 'aboutPage.body')}>
+          {p.body}
+        </p>
+      </div>
+      <Principles principles={c.principles} single />
+    </div>
+  </div>
+</section>
