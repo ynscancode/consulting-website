@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { z } from 'astro:content';
+import { z } from 'astro/zod';
 import {
   getBranchHeadSha,
   getCommitDetail,
