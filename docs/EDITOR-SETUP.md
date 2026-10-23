@@ -168,16 +168,19 @@ ever holds placeholder values — if you ever edit that file, keep it that way.
      and finding);
    - insights: the text under every card; each insight's page: its sector and
      card colour;
-   - contact: the booking times (also editable on the slots themselves), the
-     business types and placeholder, the form's error messages,
+   - contact: the booking slots' settings (how many days are offered, which
+     weekdays are closed, the date format, and the day and month names and
+     times, which can also be edited on the slots themselves), the business
+     types and placeholder, the form's error messages,
      the confirmation shown after sending, and the copy-handle messages;
    - about: the photo (upload, replace, remove).
 
    Some messages contain placeholders in braces, such as `{name}` or `{n}`;
    keep them and they're filled in on the site. The self-check, insight filter
    and booking form don't respond in the editor (their texts are edited
-   instead). The booking slots' dates are worked out automatically (the next
-   four days, Sundays skipped); only the times are content. Not editable here:
+   instead). The booking slots' dates are worked out each day from those
+   settings (by default the next four days, Sundays closed), so they stay
+   current; the date number itself isn't editable. Not editable here:
    links, colours and layout. Those are code changes.
 6. **Undo / Redo:** step back and forward through your saved field edits
    (Ctrl+Z / Ctrl+Shift+Z work too). Each undo or redo is saved to the draft
