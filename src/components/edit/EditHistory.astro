@@ -1,13 +1,13 @@
 ---
-// Version history list. Rows are built by the client script below, styled by
-// the global src/styles/editor.css (no <style> block here).
-import EditHeader from './EditHeader.astro';
+// Version history list, on a paper band like the site's own pages. Rows are
+// built by the client script below, styled by the global
+// src/styles/editor.css (no <style> block here).
 ---
 
-<EditHeader active="history" />
-<main id="main-content" class="wrap">
-  <section class="section section--first" aria-labelledby="history-h">
-    <h1 id="history-h" class="h-section">Version history</h1>
+<section class="band band--paper on-light history-page" aria-labelledby="history-h">
+  <div class="wrap">
+    <p class="label">Editor</p>
+    <h1 id="history-h" class="d-l">Version history</h1>
     <p id="history-status" role="status" aria-live="polite"></p>
 
     <p class="editor-note" id="history-loading">Loading history…</p>
@@ -19,8 +19,8 @@ import EditHeader from './EditHeader.astro';
     </div>
 
     <ul class="history-list" id="history-list" aria-label="Version history" hidden></ul>
-  </section>
-</main>
+  </div>
+</section>
 
 <script>
   import { fetchHistory, revertDraft } from '../../lib/editor/client';
@@ -46,7 +46,9 @@ import EditHeader from './EditHeader.astro';
   //     the whole bundled file), "Revert <projects|experience> content to
   //     <shortSha>", "Revert blog post <slug> to <shortSha>".
   function parseCommit(message: string): ParsedCommit {
-    let m = message.match(/^Update (home|about|contact|emptyStates) content$/);
+    // Avisé pages ("Update <page> content", one file) and the earlier
+    // personal-site areas, which still appear in older history.
+    let m = message.match(/^Update (home|services|approach|insights|about|contact|site|emptyStates) content$/);
     if (m) return { kind: 'update-site', area: m[1] };
     if (message.match(/^Revert site content to [0-9a-f]+$/)) return { kind: 'update-site', area: 'site' };
     m = message.match(/^(?:Update|Revert) (projects|experience) content(?: to [0-9a-f]+)?$/);
@@ -80,6 +82,9 @@ import EditHeader from './EditHeader.astro';
   // independently (see handleRestore call sites).
   const AREA_LABELS: Record<string, string> = {
     home: 'Home',
+    services: 'What we do',
+    approach: 'How we work',
+    insights: 'Insights',
     about: 'About',
     contact: 'Contact',
     emptyStates: 'Empty states',

@@ -1,0 +1,72 @@
+---
+import InsightCard from '../InsightCard.astro';
+import { ed, edList, isEditing, siteContent } from '../../../lib/editable';
+import { richHtml } from '../../../lib/richText';
+
+const L = Astro.locals;
+const c = siteContent(L);
+const p = c.insightsPage;
+const sectors = ['All', ...c.insights.map((a) => a.sector), ...c.extraSectors];
+const editing = isEditing(L);
+---
+
+<section class="band band--forest band--tight on-dark">
+  <div class="wrap page-hero">
+    <p class="label" {...ed(L, 'insightsPage.label')}>{p.label}</p>
+    <h1 class="d-xl" {...ed(L, 'insightsPage.headline', 'rich')} set:html={richHtml(p.headline, { emClass: true })} />
+    <p class="lede" {...ed(L, 'insightsPage.lede')}>{p.lede}</p>
+  </div>
+</section>
+<section class="band band--paper on-light">
+  <div class="wrap">
+    <div class="chips" id="chips" role="group" aria-label="Filter by sector">
+      {
+        sectors.map((s) => (
+          <button type="button" class="chip" data-sector={s} aria-pressed={s === 'All' ? 'true' : 'false'}>
+            {s}
+          </button>
+        ))
+      }
+    </div>
+    <div class="cards" id="allCards" {...edList(L, 'insights')}>
+      {c.insights.map((a, i) => <InsightCard insight={a} index={i} />)}
+    </div>
+    <p class="empty" id="cardsEmpty" hidden={!editing} {...ed(L, 'insightsPage.empty')}>{p.empty}</p>
+    {
+      editing && (
+        <div class="edit-extra" data-edit-extra>
+          <p class="edit-extra__title">Shown on every insight card</p>
+          <p>
+            <span data-edit="insightsPage.cardFooter" data-edit-kind="text">{p.cardFooter}</span>
+          </p>
+          <p class="edit-extra__note">
+            Filter chips come from each insight's sector (set on the insight's own page). The empty-sector message above
+            shows when a chip has no insights.
+          </p>
+        </div>
+      )
+    }
+  </div>
+</section>
+
+<script>
+  const chips = document.getElementById('chips')!;
+  const cards = Array.from(document.querySelectorAll<HTMLElement>('#allCards .card'));
+  const empty = document.getElementById('cardsEmpty')!;
+
+  if (!document.documentElement.hasAttribute('data-editing')) {
+    chips.addEventListener('click', (e) => {
+      const b = (e.target as Element).closest('.chip');
+      if (!b) return;
+      const current = b.getAttribute('data-sector');
+      chips.querySelectorAll('.chip').forEach((c) => c.setAttribute('aria-pressed', String(c === b)));
+      let shown = 0;
+      cards.forEach((card) => {
+        const match = current === 'All' || card.dataset.sector === current;
+        card.hidden = !match;
+        if (match) shown++;
+      });
+      empty.hidden = shown > 0;
+    });
+  }
+</script>

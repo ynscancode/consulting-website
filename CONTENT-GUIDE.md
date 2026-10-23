@@ -1,6 +1,6 @@
 # Content Guide (for Isaiah — no coding required)
 
-> **The public site is now Avisé & Co.** Its pages read their lists (services, steps, principles, FAQs, insights, self-check options) from `src/data/avise.json`, and their headings and short copy from the page files in `src/pages/`. Text in `[square brackets]` is a placeholder. The editor and the rest of this guide still cover the previous personal-site content, which no longer appears on the public site, until the editor is rebuilt.
+> **The public site is now Avisé & Co.** Every piece of its text lives in `src/data/avise.json`, and the editor at `/edit` edits it in place on the real pages (see [`docs/EDITOR-SETUP.md`](./docs/EDITOR-SETUP.md) §3). To edit the file by hand instead, keep the existing keys; in headlines, `<em>…</em>` marks the italic phrase. Text in `[square brackets]` is a placeholder. The rest of this guide describes the previous personal site's files, which no longer appear anywhere.
 
 **The easiest way to edit content is the inline editor:** sign in at `/edit` on the live site, click any text and type, then Publish. Setup and usage are in [`docs/EDITOR-SETUP.md`](./docs/EDITOR-SETUP.md).
 

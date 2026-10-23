@@ -1,4 +1,123 @@
 {
+  "header": {
+    "cta": "Free consult"
+  },
+  "footer": {
+    "ctaHeadline": "Want us to mark up your <em>business?</em>",
+    "ctaLede": "We read up on you first, then send one short brief. No pitch deck.",
+    "ctaButton": "Book a free consult",
+    "tagline": "Practical strategy for Singapore small businesses.",
+    "contact": [
+      "Instagram @avise.co",
+      "[hello@avise.co]",
+      "Singapore"
+    ],
+    "legal": "© 2026 [Registered business name]. UEN [number].",
+    "note": "Prototype. Enquiries are not sent anywhere yet."
+  },
+  "home": {
+    "hero": {
+      "label": "Practical strategy for Singapore small businesses",
+      "headline": "Made for owners. We'll tell you <em>straight.</em>",
+      "lede": "We do the homework on your business first, then bring you one thing you did not already know.",
+      "primary": "Book a free consult",
+      "secondary": "See what we do",
+      "caption": "Video call, about [30] minutes. No pitch deck, promise."
+    },
+    "services": {
+      "label": "What we do",
+      "headline": "Three problems we solve <em>well.</em>",
+      "more": "More on this →",
+      "noteStrong": "Strategy only.",
+      "noteText": "We don't make your posts or run your ads. We tell you which ones are worth making."
+    },
+    "selfcheck": {
+      "label": "Two-minute self-check",
+      "headline": "Where does it <em>hurt?</em>",
+      "lede": "Tap whatever sounds familiar. You don't need to know the cause. Finding it is our job.",
+      "book": "Book a consult about this",
+      "clear": "Clear"
+    },
+    "how": {
+      "label": "How we work",
+      "headline": "Diagnose first. Then <em>fix.</em>",
+      "lede": "The free consult names the problem. The project fixes it. You decide in between.",
+      "button": "The full process"
+    },
+    "insights": {
+      "label": "Insights",
+      "headline": "Receipts for every <em>claim.</em>",
+      "link": "All insights →"
+    }
+  },
+  "servicesPage": {
+    "label": "What we do",
+    "headline": "Strategy you can actually <em>use.</em>",
+    "lede": "Three areas, each scoped to a clear deliverable you can run without us.",
+    "whenTitle": "Call us when",
+    "getTitle": "What you get",
+    "dontLabel": "What we don't do",
+    "dontHeadline": "We advise. We don't <em>produce.</em>",
+    "dont": [
+      "Design your posts or shoot your content",
+      "Run your ads or manage your accounts",
+      "Sell you software you didn't need"
+    ],
+    "dontNote": "We'll tell you what to post, where, and for whom. Making it stays with you or the people you already work with.",
+    "pricingLabel": "Pricing",
+    "pricingHeadline": "Quoted per project, after the <em>consult.</em>",
+    "pricingBody": "We scope the fix first, then quote a fixed fee for it. When cash is tight, we look for savings before anything that costs you more. Rates are agreed per engagement and kept between us."
+  },
+  "approachPage": {
+    "label": "How we work",
+    "headline": "Find the real problem, then <em>fix it.</em>",
+    "lede": "Owners usually see the symptom. Slow weekdays, thin margins, stock that won't move. We work back to the cause before we suggest anything.",
+    "stepsLabel": "Five steps",
+    "stepsHeadline": "The consult is the diagnosis. The project is the <em>treatment.</em>",
+    "staysLabel": "What stays after we leave",
+    "staysHeadline": "Built to keep <em>working.</em>"
+  },
+  "insightsPage": {
+    "label": "Insights",
+    "headline": "Singapore small business, <em>read closely.</em>",
+    "lede": "Analyses of local industries and the problems owners bring us. Every figure carries its source.",
+    "empty": "Nothing in this sector yet. [Next analysis] is in the works.",
+    "cardFooter": "Read the analysis →  ·  draft, figures pending",
+    "back": "← All insights",
+    "draftNote": "Draft. Figures in [brackets] are placeholders until the analysis is done."
+  },
+  "aboutPage": {
+    "label": "About",
+    "headline": "Who you'd be <em>hiring.</em>",
+    "image": null,
+    "lede": "Avisé & Co. is run by [founder name], [one line on background]. We started it because most advice for small businesses is either generic growth tips or priced for companies ten times their size.",
+    "body": "We work with owner-operators across retail, F&B, beauty and services. The work is strategy and operations: pricing, process, positioning and market checks, sized to what one owner can run."
+  },
+  "contactPage": {
+    "label": "Free consult",
+    "headline": "Tell us what's <em>wrong.</em>",
+    "lede": "Any problem. You don't need to know the cause. We read up on you first, then spend the call on what we found.",
+    "nameLabel": "Your name",
+    "bizLabel": "Business name",
+    "typeLabel": "Type of business",
+    "contactLabel": "Email or Instagram handle",
+    "problemLabel": "What's going on?",
+    "problemHint": "Describe it how you'd tell a friend. Two or three sentences is plenty.",
+    "slotLegend": "Pick a time for the video call",
+    "slotHint": "Singapore time. We'll confirm by message.",
+    "submit": "Request my consult",
+    "submitNote": "Free, and no obligation to hire us.",
+    "messageLabel": "Rather message?",
+    "handle": "@avise.co",
+    "copyButton": "Copy handle",
+    "messageBody": "DM us any problem on Instagram and we'll set up the call from there.",
+    "nextLabel": "What happens next",
+    "next": [
+      "We read up on your business before the call",
+      "On the call, we name the likely cause and the ways to fix it",
+      "If a project makes sense, we send one short brief and a quote"
+    ]
+  },
   "heroReceipt": {
     "number": "No. 0001",
     "lines": [

@@ -1,10 +1,6 @@
 ---
 import SiteLayout from '../layouts/SiteLayout.astro';
-import Steps from '../components/site/Steps.astro';
-import Principles from '../components/site/Principles.astro';
-import { content } from '../lib/aviseContent';
-
-const { steps, principles } = content;
+import ApproachView from '../components/site/views/ApproachView.astro';
 ---
 
 <SiteLayout
@@ -12,32 +8,5 @@ const { steps, principles } = content;
   current="approach"
   description="Find the real problem, then fix it. We work back from the symptom to the cause before we suggest anything."
 >
-  <section class="band band--forest band--tight on-dark">
-    <div class="wrap page-hero">
-      <p class="label">How we work</p>
-      <h1 class="d-xl">Find the real problem, then <em class="em">fix it.</em></h1>
-      <p class="lede">
-        Owners usually see the symptom. Slow weekdays, thin margins, stock that won't move. We work back to the cause before we
-        suggest anything.
-      </p>
-    </div>
-  </section>
-  <section class="band band--ink on-dark">
-    <div class="wrap how-grid">
-      <div class="stack">
-        <p class="label">Five steps</p>
-        <h2 class="d-l">The consult is the diagnosis. The project is the <em class="em">treatment.</em></h2>
-      </div>
-      <Steps steps={steps} />
-    </div>
-  </section>
-  <section class="band band--paper on-light">
-    <div class="wrap">
-      <div class="section-head">
-        <p class="label">What stays after we leave</p>
-        <h2 class="d-l">Built to keep <em class="em">working.</em></h2>
-      </div>
-      <Principles principles={principles} />
-    </div>
-  </section>
+  <ApproachView />
 </SiteLayout>

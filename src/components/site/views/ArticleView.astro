@@ -1,0 +1,87 @@
+---
+import Receipt from '../Receipt.astro';
+import { ed, edItem, edList, isEditing, siteContent, siteLink } from '../../../lib/editable';
+import type { Insight } from '../../../lib/aviseContent';
+
+export type Props = {
+  insight: Insight;
+  /** Position in the insights list (the editor's paths). */
+  index: number;
+};
+
+const { insight, index } = Astro.props;
+const L = Astro.locals;
+const p = siteContent(L).insightsPage;
+const editing = isEditing(L);
+const base = `insights.${index}`;
+
+// Body entries starting with "## " are subheadings; the receipt figure goes
+// after the second block, as in the reference design.
+const blocks = insight.body.map((text, j) =>
+  text.startsWith('## ') ? { kind: 'h2' as const, text: text.slice(3), j } : { kind: 'p' as const, text, j }
+);
+const before = blocks.slice(0, 2);
+const after = blocks.slice(2);
+const blockAttrs = (b: (typeof blocks)[number]) => ({
+  ...edItem(L, b.j),
+  ...ed(L, `${base}.body.${b.j}`),
+  ...(editing && b.kind === 'h2' ? { 'data-edit-prefix': '## ' } : {}),
+});
+---
+
+<section class="band band--paper on-light">
+  <div class="wrap">
+    <article class="article">
+      <a class="back text-link" href={siteLink(L, '/insights')} {...ed(L, 'insightsPage.back')}>{p.back}</a>
+      <p class="label" {...ed(L, `${base}.meta`)}>{insight.meta}</p>
+      <h1 class="d-m" {...ed(L, `${base}.headline`)}>{insight.headline}</h1>
+      <p class="lede" style="color:var(--ink-muted)" {...ed(L, `${base}.lede`)}>{insight.lede}</p>
+      <p class="draft-note" {...ed(L, 'insightsPage.draftNote')}>{p.draftNote}</p>
+      {
+        editing ? (
+          <div class="article-body" {...edList(L, `${base}.body`)}>
+            {before.map((b) => (b.kind === 'h2' ? <h2 {...blockAttrs(b)}>{b.text}</h2> : <p {...blockAttrs(b)}>{b.text}</p>))}
+            <div class="figure">
+              <Receipt variant="dark" data={insight.receipt} editPath={`${base}.receipt`} />
+            </div>
+            {after.map((b) => (b.kind === 'h2' ? <h2 {...blockAttrs(b)}>{b.text}</h2> : <p {...blockAttrs(b)}>{b.text}</p>))}
+          </div>
+        ) : (
+          <>
+            {before.map((b) => (b.kind === 'h2' ? <h2>{b.text}</h2> : <p>{b.text}</p>))}
+            <div class="figure">
+              <Receipt variant="dark" data={insight.receipt} />
+            </div>
+            {after.map((b) => (b.kind === 'h2' ? <h2>{b.text}</h2> : <p>{b.text}</p>))}
+          </>
+        )
+      }
+      {
+        editing && (
+          <div class="edit-extra" data-edit-extra>
+            <p class="edit-extra__title">Card settings (not shown on this page)</p>
+            <div class="edit-extra__row">
+              <label>
+                Sector <span data-edit={`${base}.sector`} data-edit-kind="text">{insight.sector}</span>
+              </label>
+              <label>
+                Card colour{' '}
+                <select data-edit={`${base}.tone`} data-edit-kind="select">
+                  <option value="card" selected={insight.tone === 'card'}>
+                    White
+                  </option>
+                  <option value="forest" selected={insight.tone === 'forest'}>
+                    Forest
+                  </option>
+                </select>
+              </label>
+            </div>
+            <p class="edit-extra__note">
+              Address: /insights/{insight.id} (fixed once published). Sector sets the filter chip on the Insights page.
+            </p>
+          </div>
+        )
+      }
+    </article>
+  </div>
+</section>

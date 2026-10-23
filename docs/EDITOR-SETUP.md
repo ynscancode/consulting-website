@@ -127,68 +127,50 @@ ever holds placeholder values — if you ever edit that file, keep it that way.
    still logs you in, but drops you on the normal public homepage afterward
    instead of the editor; you'd then navigate to `/edit` yourself. Bookmarking the
    `redirect_to=/edit` version is the more convenient entry point.)
-2. **The edit view:** once logged in, the site's editable pages mirror the public
-   URL structure under `/edit`:
-   - `/edit` — home hero
-   - `/edit/about` — about page
-   - `/edit/contact` — contact page
-   - `/edit/projects` — projects list
-   - `/edit/experience` — experience list
-   - `/edit/blog` — blog post list
-   - `/edit/blog/new` — create a new post
-   - `/edit/blog/<slug>` — edit an existing post
-3. **Edit:** click into a heading, paragraph, or field to edit it in place (most
-   text fields are directly click-and-type on the live-styled page). Link fields
-   (CTA hrefs, project/experience links, contact URLs) use a small "edit" button
-   that prompts for the URL rather than being directly click-to-type. Blog post
-   fields (title, description, date, tags, draft toggle, body) use a form-style
-   editor rather than inline click-to-type, since a blog post's body is raw
-   Markdown, not the rendered page text.
-4. **What's editable (MVP scope):**
-   - **Hero (home)** — eyebrow text, headline, lede paragraph, both CTA buttons'
-     label and link.
-   - **About** — the lede and body paragraphs, edited as one block (not
-     individually add/remove-able in this MVP).
-   - **Contact** — the lede, plus email/LinkedIn/GitHub. Each of the three can be
-     set to a URL or cleared back to blank.
-   - **Projects** — add, remove, and edit entries (eyebrow, title, body, optional
-     link).
-   - **Experience** — same as Projects (add, remove, edit).
-   - **Blog** — full add/remove/edit: title, description, date, tags, draft
-     toggle, and body.
-   - Not editable here (by design — see the product-owner scope note on the team
-     board): the positioning-matrix diagram on the hero, nav labels, site-wide
-     title, design tokens/colors, and page layout/structure. These require a code
-     change, not the editor.
-5. **Save to draft:** click **Save to draft** in the bottom toolbar, or just wait —
-   most fields autosave a couple of seconds after you stop typing. The toolbar's
-   status text shows whether there are unsaved changes, a save in progress, or a
-   save error.
-6. **Preview:** click **Preview** to get a link to the draft branch's Vercel
-   preview deployment — this is the actual site rendered with your unpublished
-   changes, safe to check before anyone else sees them. If nothing has been saved
-   to the draft yet, Preview will tell you to save a change first.
-7. **Publish:** click **Publish**, confirm the prompt. This merges the draft
-   branch into `master`, which triggers the normal production deploy — your
-   changes go live once that deploy finishes (same timing as any other push to
-   `master`). If the merge can't complete cleanly (a conflict), Publish reports
-   that and nothing is merged — see Troubleshooting.
-8. **Log out:** click **Log out** in the toolbar when you're done, especially on a
-   shared or unattended machine.
+2. **The edit view:** the editor is the real site. Every page has an editing
+   twin under `/edit`, rendered by the same components from the draft content,
+   so it looks exactly like the live page:
+   - `/edit` (home), `/edit/services`, `/edit/approach`, `/edit/insights`,
+     `/edit/insights/<id>`, `/edit/about`, `/edit/contact`
+   - `/edit/history`: version history
+   The header and footer links keep you inside the editor.
+3. **Edit text in place:** anything with a dashed outline is editable: click it
+   and type. That covers headlines, ledes, labels, button text, list items, FAQ
+   questions and answers, receipts, the footer and the contact page's form
+   labels. Press Enter (or click away) to finish a field. In a headline, select
+   a phrase and press Ctrl+I (Cmd+I on a Mac) to set the italic emphasis; that is
+   the only formatting kept. Pasted text arrives as plain text.
+4. **Lists:** hover over (or click into) a list item to get its toolbar: ↑ ↓ to
+   move it, + to add one after it, ✕ to remove it. In an insight's body, "+ H"
+   adds a subheading; on a receipt line, ★ makes it the highlighted (citron)
+   line. Adding a whole insight creates its page at `/insights/<id>`.
+   List changes save straight away and the page reloads to show them.
+5. **Fields the page doesn't show** sit in dashed editor-only panels: each
+   self-check symptom's suggested fix and area (home), an insight's sector and
+   card colour (on the insight's page), the text under every insight card
+   (insights list), and the About photo (upload, replace, remove).
+   Not editable here: navigation labels, links, the booking form's time slots
+   and business types, the self-check receipt's wording, page titles and
+   descriptions, colours and layout. Those are code changes.
+6. **Save to draft:** each field saves when you leave it (or press Enter). The
+   toolbar shows unsaved changes, saving, saved, or an error; **Save to draft**
+   saves anything pending. **Undo** / **Redo** step through your field edits.
+7. **Preview:** click **Preview** to build the draft branch's Vercel preview:
+   the actual site with your unpublished changes. If nothing has been saved to
+   the draft yet, Preview will tell you to save a change first.
+8. **Publish:** click **Publish**, confirm the prompt. This merges the draft
+   branch into `master`, which triggers the normal production deploy; your
+   changes go live once that deploy finishes. If the merge can't complete
+   cleanly (a conflict), Publish reports that and nothing is merged.
+9. **Log out:** click **Log out** in the toolbar when you're done, especially on
+   a shared or unattended machine.
 
-**Two immutability rules to know:**
-- **Blog post slugs are locked after the post's first save.** The slug (used in
-  the post's URL) is generated from the title once, on creation; editing the
-  title afterward does not change the URL. This is intentional — it protects
-  existing links and the RSS feed.
-- **Project/experience slugs are the same** — generated once on creation from the
-  title, used for the `#slug` anchor links from the home/projects pages, and
-  immutable afterward.
-
-**Contact "Coming soon" behavior:** when email/LinkedIn/GitHub is empty, the
-public contact page shows an italic "Coming soon" label instead of a link — never
-a broken/empty link. Clearing a filled-in value back out returns it to that
-"Coming soon" state; filling in a URL replaces "Coming soon" with a real link.
+**Where the content lives:** everything the editor changes is in
+`src/data/avise.json` on the `editor-draft` branch until you publish. Saves send
+only the fields you changed, and the server applies them to the latest draft and
+checks the whole file before writing, so two editor tabs on different pages
+can't overwrite each other. **Insight addresses (`/insights/<id>`) are fixed**
+once created, to keep links working.
 
 ## 4. Security notes
 

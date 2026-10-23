@@ -1,19 +1,25 @@
 ---
+import { ed, edItem, siteContent, siteLink } from '../../lib/editable';
 import type { Insight } from '../../lib/aviseContent';
 
 export type Props = {
   insight: Insight;
+  /** Position in the insights list (the editor's paths). */
+  index: number;
 };
 
-const { insight } = Astro.props;
+const { insight, index } = Astro.props;
+const L = Astro.locals;
+const footer = siteContent(L).insightsPage.cardFooter;
 ---
 
 <a
   class={insight.tone === 'forest' ? 'card card--forest' : 'card'}
-  href={`/insights/${insight.id}`}
+  href={siteLink(L, `/insights/${insight.id}`)}
   data-sector={insight.sector}
+  {...edItem(L, index)}
 >
-  <span class="card__meta">{insight.meta}</span>
-  <span class="card__headline">{insight.headline}</span>
-  <span class="card__footer">Read the analysis → &nbsp;·&nbsp; draft, figures pending</span>
+  <span class="card__meta" {...ed(L, `insights.${index}.meta`)}>{insight.meta}</span>
+  <span class="card__headline" {...ed(L, `insights.${index}.headline`)}>{insight.headline}</span>
+  <span class="card__footer">{footer}</span>
 </a>

@@ -1,34 +1,36 @@
 ---
-// The inline WYSIWYG editor shell — tech-lead-20260715T192159 frontend
-// contract, section 5. prerender=false so this can read Astro.locals.session
+// The inline editor. prerender=false so this can read Astro.locals.session
 // (populated by src/middleware.ts) at request time; middleware already
 // returns a generic 404 for any /edit/** request without a valid session,
 // but this route re-checks defensively so the page itself never assumes it
-// was reached legitimately (defense in depth, same generic response either
-// way — indistinguishable from a genuinely missing route per KB-0007).
+// was reached legitimately (same generic response either way, KB-0007).
 //
-// URL scheme (mirrors the public site's own routes):
-//   /edit                -> home (hero)
-//   /edit/about           -> about
-//   /edit/contact         -> contact
-//   /edit/projects        -> projects collection
-//   /edit/experience      -> experience collection
-//   /edit/blog             -> blog post list (add/remove)
-//   /edit/blog/new          -> create a new post
-//   /edit/blog/<slug>       -> edit an existing post
+// URL scheme mirrors the public site, so every page is edited in place:
+//   /edit                  -> home
+//   /edit/services         -> what we do
+//   /edit/approach         -> how we work
+//   /edit/insights         -> insights list
+//   /edit/insights/<id>    -> one insight
+//   /edit/about            -> about
+//   /edit/contact          -> free consult
+//   /edit/history          -> version history
+//
+// Each page renders the SAME view component as the public route, fed the
+// draft content and with edit hooks on (src/lib/editable.ts).
 export const prerender = false;
 
-import { loadSiteJson, loadCollectionJson, loadBlogList, loadBlogPost, type ContentSource } from '../../lib/draftContent';
+import { loadAviseJson } from '../../lib/draftContent';
 import EditLayout from '../../layouts/EditLayout.astro';
-import { isPersistableContactValue } from '../../lib/contactValue';
 import EditorHarness from '../../components/EditorHarness.astro';
-import EditHome from '../../components/edit/EditHome.astro';
-import EditAbout from '../../components/edit/EditAbout.astro';
-import EditContact from '../../components/edit/EditContact.astro';
-import EditCollection from '../../components/edit/EditCollection.astro';
-import EditBlogList from '../../components/edit/EditBlogList.astro';
-import EditBlogPost from '../../components/edit/EditBlogPost.astro';
 import EditHistory from '../../components/edit/EditHistory.astro';
+import HomeView from '../../components/site/views/HomeView.astro';
+import ServicesView from '../../components/site/views/ServicesView.astro';
+import ApproachView from '../../components/site/views/ApproachView.astro';
+import InsightsView from '../../components/site/views/InsightsView.astro';
+import ArticleView from '../../components/site/views/ArticleView.astro';
+import AboutView from '../../components/site/views/AboutView.astro';
+import ContactView from '../../components/site/views/ContactView.astro';
+import type { NavKey, Ground } from '../../components/site/SiteHeader.astro';
 
 function notFound(): Response {
   return new Response('Not found', {
@@ -41,233 +43,60 @@ if (!Astro.locals.session) {
   return notFound();
 }
 
-const rawPath = Astro.params.path ?? '';
-const segments = rawPath.split('/').filter(Boolean);
-const [area, sub] = segments;
+const segments = (Astro.params.path ?? '').split('/').filter(Boolean);
+const [area, sub, extra] = segments;
+if (extra) return notFound();
 
-let pageTitle = 'Edit';
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- discriminated
-// by `view`; the branches above are the sole producers, each shaped to match
-// the props of the editor component it's handed to below.
-let body: any = null;
+type View = 'home' | 'services' | 'approach' | 'insights' | 'article' | 'about' | 'contact' | 'history';
+const PAGES: Record<string, { view: View; title: string; current?: NavKey }> = {
+  '': { view: 'home', title: 'Home' },
+  services: { view: 'services', title: 'What we do', current: 'services' },
+  approach: { view: 'approach', title: 'How we work', current: 'approach' },
+  insights: { view: 'insights', title: 'Insights', current: 'insights' },
+  about: { view: 'about', title: 'About', current: 'about' },
+  contact: { view: 'contact', title: 'Free consult' },
+  history: { view: 'history', title: 'Version history' },
+};
 
-// The `source` of whichever loader served the current view — draft-then-
-// master-then-build (src/lib/draftContent.ts) — surfaced to the toolbar so
-// it can render a sync-state affordance (senior-frontend-dev owns that UI;
-// this route only supplies the value it already has at render time).
-let contentSource: ContentSource;
+const pageDef = !sub ? PAGES[area ?? ''] : area === 'insights' ? { view: 'article' as View, title: 'Insight', current: 'insights' as NavKey } : undefined;
+if (!pageDef) return notFound();
 
-// tech-lead-20260718T041814 D2: each view loads only the GitHub reads it
-// actually needs, concurrently where more than one is needed. Do NOT
-// reintroduce an unconditional top-level loadSiteJson() — that was the
-// waste (e.g. blog-post views never use siteData/emptyStates).
-function emptyStatesFrom(siteData: Record<string, any>) {
-  return {
-    projects: siteData.emptyStates?.projects ?? '',
-    experience: siteData.emptyStates?.experience ?? '',
-    blog: siteData.emptyStates?.blog ?? '',
-    contact: siteData.emptyStates?.contact ?? '',
-    // `highlights` is now a required field on emptyStatesBodySchema
-    // alongside the other four (schemas.ts). Every emptyStates-writing
-    // editor (Contact/Collection/BlogList) round-trips this WHOLE object on
-    // every save regardless of which single field it actually edits — that
-    // is the existing convention for the other four fields. Omitting this
-    // key here would either fail validation (missing required field) or, if
-    // relaxed to optional, silently clobber the highlights empty-state copy
-    // back to a default on every unrelated emptyStates save. Must stay a
-    // plain string (not the array branch of content.config.ts's union).
-    highlights:
-      typeof siteData.emptyStates?.highlights === 'string' ? siteData.emptyStates.highlights : '',
-  };
+// Version history fetches its data client-side; every other page needs the draft.
+const loaded = pageDef.view === 'history' ? null : await loadAviseJson();
+const contentSource = loaded?.source ?? 'draft';
+// Editing on every editor page: header and footer links stay inside /edit.
+Astro.locals.editing = true;
+if (loaded) Astro.locals.aviseContent = loaded.data;
+
+let insightIndex = -1;
+if (pageDef.view === 'article') {
+  insightIndex = loaded!.data.insights.findIndex((item) => item.id === sub);
+  if (insightIndex < 0) return notFound();
 }
+const insight = insightIndex >= 0 ? loaded!.data.insights[insightIndex] : undefined;
 
-if (segments.length === 0) {
-  // Highlights (tech-lead-20260720T113459Z section 5): the "add" pool and
-  // the Selected-row title resolution must read at the SAME draft freshness
-  // the editor writes at — otherwise the pool/titles here could disagree
-  // with what a save actually persists (the ARCH-0010/0020 write-only
-  // class). Load concurrently; this view didn't load collections before.
-  const [siteJson, projectsResult, blogResult] = await Promise.all([
-    loadSiteJson(),
-    loadCollectionJson('projects'),
-    loadBlogList(),
-  ]);
-  contentSource = siteJson.source;
-  const siteData = (siteJson.data ?? {}) as Record<string, any>;
-  const hero = siteData.home?.hero;
-  if (!hero) return notFound();
-  pageTitle = 'Edit — Home';
-  const highlights = Array.isArray(siteData.home?.highlights) ? siteData.home.highlights : [];
-  const projectsPool = (projectsResult.data as any[]).map((p) => ({
-    slug: p.slug,
-    title: p.title,
-    category: p.category,
-    startDate: p.startDate,
-    endDate: p.endDate,
-  }));
-  // Non-draft only (PO AC1: drafts excluded from the pool).
-  const blogPool = blogResult.data
-    .filter((p) => !p.draft)
-    .map((p) => ({ id: p.slug, title: p.title, date: p.date }));
-  // Preview-only pills for the hero (same derivation as src/pages/index.astro:
-  // first usable email / LinkedIn contact link). No new load — siteData is in hand.
-  const contactLinks: any[] = siteData.contact?.links ?? [];
-  const usable = (type: 'email' | 'linkedin') =>
-    contactLinks.find((l) => l.type === type && l.value !== '' && isPersistableContactValue(l.type, l.value));
-  const linkedin = usable('linkedin');
-  body = {
-    view: 'home',
-    hero,
-    highlights,
-    projectsPool,
-    blogPool,
-    emptyStates: emptyStatesFrom(siteData),
-    actions: {
-      email: usable('email')?.value,
-      linkedinUrl: linkedin?.value,
-      linkedinLabel: linkedin?.label?.trim() || 'LinkedIn',
-    },
-  };
-} else if (area === 'about' && !sub) {
-  const siteJson = await loadSiteJson();
-  contentSource = siteJson.source;
-  const siteData = (siteJson.data ?? {}) as Record<string, any>;
-  const about = siteData.about;
-  if (!about) return notFound();
-  pageTitle = 'Edit — About';
-  body = {
-    view: 'about',
-    about: { body: about.body ?? '', image: about.image ?? null },
-  };
-} else if (area === 'contact' && !sub) {
-  const siteJson = await loadSiteJson();
-  contentSource = siteJson.source;
-  const siteData = (siteJson.data ?? {}) as Record<string, any>;
-  const contact = siteData.contact;
-  if (!contact) return notFound();
-  pageTitle = 'Edit — Contact';
-  body = {
-    view: 'contact',
-    contact: {
-      lede: contact.lede ?? '',
-      links: contact.links ?? [],
-    },
-    emptyStates: emptyStatesFrom(siteData),
-  };
-} else if (area === 'projects' && !sub) {
-  const [siteJson, result] = await Promise.all([loadSiteJson(), loadCollectionJson('projects')]);
-  const siteData = (siteJson.data ?? {}) as Record<string, any>;
-  contentSource = result.source;
-  pageTitle = 'Edit — Projects';
-  body = {
-    view: 'projects',
-    entries: result.data,
-    emptyStates: emptyStatesFrom(siteData),
-    // tech-lead-20260729T162747 §3: no new read — `siteData` is already in
-    // hand. Absent `ordering` entry reads as [] (KB-0010 base case).
-    categoryOrder: siteData.ordering?.categoryOrder?.projects ?? [],
-  };
-} else if (area === 'experience' && !sub) {
-  const [siteJson, result] = await Promise.all([loadSiteJson(), loadCollectionJson('experience')]);
-  const siteData = (siteJson.data ?? {}) as Record<string, any>;
-  contentSource = result.source;
-  pageTitle = 'Edit — Experience';
-  body = {
-    view: 'experience',
-    entries: result.data,
-    emptyStates: emptyStatesFrom(siteData),
-    // tech-lead-20260729T162747 §3: no new read — `siteData` is already in
-    // hand. Absent `ordering` entry reads as [] (KB-0010 base case).
-    categoryOrder: siteData.ordering?.categoryOrder?.experience ?? [],
-  };
-} else if (area === 'blog' && !sub) {
-  const [siteJson, result] = await Promise.all([loadSiteJson(), loadBlogList()]);
-  const siteData = (siteJson.data ?? {}) as Record<string, any>;
-  contentSource = result.source;
-  const sorted = [...result.data].sort((a, b) => b.date.localeCompare(a.date));
-  pageTitle = 'Edit — Blog';
-  body = {
-    view: 'blog-list',
-    posts: sorted.map((p) => ({
-      id: p.slug,
-      title: p.title,
-      description: p.description,
-      date: new Date(p.date),
-      tags: p.tags,
-      draft: p.draft,
-    })),
-    emptyStates: emptyStatesFrom(siteData),
-  };
-} else if (area === 'history' && !sub) {
-  // Version history is fetched client-side from /api/draft/history (see
-  // EditHistory.astro) — no server-side draft read needed here, so this
-  // route doesn't hit loadSiteJson/loadCollectionJson at all (tech-lead
-  // D2: only load what a view actually needs).
-  contentSource = 'draft';
-  pageTitle = 'Edit — History';
-  body = { view: 'history' };
-} else if (area === 'blog' && sub === 'new') {
-  contentSource = 'draft';
-  pageTitle = 'Edit — New blog post';
-  body = {
-    view: 'blog-post',
-    isNew: true,
-    post: {
-      slug: '',
-      title: '',
-      description: '',
-      date: new Date().toISOString().slice(0, 10),
-      draft: true,
-      tags: [],
-      body: '',
-    },
-  };
-} else if (area === 'blog' && sub) {
-  const result = await loadBlogPost(sub);
-  contentSource = result.source;
-  if (!result.data) return notFound();
-  const post = result.data;
-  pageTitle = `Edit — ${post.title}`;
-  body = {
-    view: 'blog-post',
-    isNew: false,
-    post: {
-      slug: post.slug,
-      title: post.title,
-      description: post.description,
-      date: post.date,
-      draft: post.draft,
-      tags: post.tags,
-      body: post.body ?? '',
-    },
-  };
-} else {
-  return notFound();
-}
+const title = insight ? insight.headline : pageDef.title;
+const ground: Ground = pageDef.view === 'article' || pageDef.view === 'history' ? 'paper' : 'forest';
+const page = pageDef.view === 'article' ? 'insights' : pageDef.view === 'history' ? 'site' : pageDef.view;
 ---
 
-<EditLayout title={pageTitle}>
-  {body?.view === 'home' && (
-    <EditHome
-      hero={body.hero}
-      highlights={body.highlights}
-      projectsPool={body.projectsPool}
-      blogPool={body.blogPool}
-      emptyStates={body.emptyStates}
-      actions={body.actions}
-    />
-  )}
-  {body?.view === 'about' && <EditAbout about={body.about} />}
-  {body?.view === 'contact' && <EditContact contact={body.contact} emptyStates={body.emptyStates} />}
-  {body?.view === 'projects' && (
-    <EditCollection area="projects" entries={body.entries} emptyStates={body.emptyStates} categoryOrder={body.categoryOrder} />
-  )}
-  {body?.view === 'experience' && (
-    <EditCollection area="experience" entries={body.entries} emptyStates={body.emptyStates} categoryOrder={body.categoryOrder} />
-  )}
-  {body?.view === 'blog-list' && <EditBlogList posts={body.posts} emptyStates={body.emptyStates} />}
-  {body?.view === 'blog-post' && <EditBlogPost post={body.post} isNew={body.isNew} />}
-  {body?.view === 'history' && <EditHistory />}
+<EditLayout
+  title={title}
+  current={pageDef.current}
+  ground={ground}
+  showCta={pageDef.view !== 'contact'}
+  page={page}
+  sitePage={pageDef.view !== 'history'}
+  readonly={contentSource === 'build'}
+>
+  {pageDef.view === 'home' && <HomeView />}
+  {pageDef.view === 'services' && <ServicesView />}
+  {pageDef.view === 'approach' && <ApproachView />}
+  {pageDef.view === 'insights' && <InsightsView />}
+  {pageDef.view === 'article' && insight && <ArticleView insight={insight} index={insightIndex} />}
+  {pageDef.view === 'about' && <AboutView />}
+  {pageDef.view === 'contact' && <ContactView />}
+  {pageDef.view === 'history' && <EditHistory />}
 
   <EditorHarness slot="editor-toolbar" contentSource={contentSource} />
 </EditLayout>

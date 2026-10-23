@@ -1,17 +1,24 @@
 ---
+import { ed, edItem, edList, isEditing } from '../../lib/editable';
+
 export type Props = {
   items: { q: string; a: string }[];
+  /** Dot path of `items` in avise.json. */
+  path: string;
 };
 
-const { items } = Astro.props;
+const { items, path } = Astro.props;
+const L = Astro.locals;
+// Open in the editor so every answer can be edited in place.
+const open = isEditing(L);
 ---
 
-<div class="faq">
+<div class="faq" {...edList(L, path)}>
   {
-    items.map((f) => (
-      <details>
-        <summary>{f.q}</summary>
-        <p>{f.a}</p>
+    items.map((f, i) => (
+      <details open={open} {...edItem(L, i)}>
+        <summary {...ed(L, `${path}.${i}.q`)}>{f.q}</summary>
+        <p {...ed(L, `${path}.${i}.a`)}>{f.a}</p>
       </details>
     ))
   }

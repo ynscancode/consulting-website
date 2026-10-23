@@ -1,4 +1,6 @@
 ---
+import { ed, edItem, edList } from '../../lib/editable';
+import { richHtml } from '../../lib/richText';
 import type { AviseContent } from '../../lib/aviseContent';
 
 export type Props = {
@@ -8,14 +10,15 @@ export type Props = {
 };
 
 const { principles, single } = Astro.props;
+const L = Astro.locals;
 ---
 
-<div class="principles" style={single ? 'grid-template-columns:minmax(0,1fr)' : undefined}>
+<div class="principles" style={single ? 'grid-template-columns:minmax(0,1fr)' : undefined} {...edList(L, 'principles')}>
   {
-    principles.map((p) => (
-      <div class="principle">
-        <h3 class="d-xs" set:html={p.t} />
-        <p class="body-s" style="color:var(--ink-muted)">
+    principles.map((p, i) => (
+      <div class="principle" {...edItem(L, i)}>
+        <h3 class="d-xs" {...ed(L, `principles.${i}.t`, 'rich')} set:html={richHtml(p.t)} />
+        <p class="body-s" style="color:var(--ink-muted)" {...ed(L, `principles.${i}.b`)}>
           {p.b}
         </p>
       </div>
