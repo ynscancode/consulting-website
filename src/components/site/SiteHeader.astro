@@ -14,6 +14,11 @@ export type Props = {
 
 const { current, ground = 'forest', hideCta = false } = Astro.props;
 const c = siteContent(Astro.locals);
+// The call to action only ever hides at the top of the home page, where the
+// hero has its own "Book a free consult" (see the script). Everywhere else it
+// renders visible, so it never fades in on load.
+const isHome = ['/', '/edit', '/edit/'].includes(Astro.url.pathname);
+const ctaState = hideCta ? 'none' : isHome ? 'off' : 'on';
 
 const links: { key: NavKey; href: string; label: string }[] = [
   { key: 'services', href: '/services', label: 'What we do' },
@@ -23,7 +28,7 @@ const links: { key: NavKey; href: string; label: string }[] = [
 ];
 ---
 
-<header class="site-header on-dark" data-ground={ground} data-cta={hideCta ? 'none' : 'off'}>
+<header class="site-header on-dark" data-ground={ground} data-cta={ctaState}>
   <div class="wrap header-row">
     <a class="wordmark" href={siteLink(Astro.locals, '/')} aria-label="Avisé & Co., home">Avisé <span class="amp" aria-hidden="true">&amp;</span> Co.</a>
     <button class="menu-btn" id="menuBtn" aria-expanded="false" aria-controls="siteNav">Menu</button>
@@ -42,9 +47,8 @@ const links: { key: NavKey; href: string; label: string }[] = [
 
 <script>
   // The header has no bar of its own: it takes the ground of the band under its
-  // bottom edge (solid ink while the phone menu is open) and hides its call to
-  // action while another "book" button is on screen, so two act buttons never
-  // show at once.
+  // bottom edge (solid ink while the phone menu is open). On the home page it
+  // hides its call to action while the hero's own buttons are on screen.
   const header = document.querySelector<HTMLElement>('.site-header')!;
   const menuBtn = document.getElementById('menuBtn')!;
   const siteNav = document.getElementById('siteNav')!;
@@ -93,33 +97,17 @@ const links: { key: NavKey; href: string; label: string }[] = [
   if ('ResizeObserver' in window) new ResizeObserver(updateHeader).observe(document.body);
   updateHeader();
 
-  /* Call to action: hidden while the home hero's buttons, the self-check's
-     button or the footer's button is in view. The contact page renders it
-     with data-cta="none" and never changes that. */
-  if (header.getAttribute('data-cta') !== 'none') {
+  /* Call to action: on the home page only, hidden while the hero's buttons
+     are in view (they'd duplicate it); the server rendered it "off" there.
+     Every other page renders it "on" (or "none" on contact) and leaves it. */
+  const heroCta = document.getElementById('heroCta');
+  if (heroCta && header.getAttribute('data-cta') === 'off') {
     if ('IntersectionObserver' in window) {
-      const visible = new Map<Element, boolean>();
-      const updateCta = () => {
-        header.setAttribute('data-cta', [...visible.values()].some(Boolean) ? 'off' : 'on');
-      };
-      const watch = (el: Element | null, rootMargin?: string) => {
-        if (!el) return;
-        visible.set(el, false);
-        new IntersectionObserver(
-          (entries) => {
-            visible.set(el, entries[0].isIntersecting);
-            updateCta();
-          },
-          { rootMargin }
-        ).observe(el);
-      };
       // The hero's row sits right under the header at load, so don't count the header's own strip.
-      watch(document.getElementById('heroCta'), '-72px 0px 0px 0px');
-      watch(document.getElementById('checkBook'));
-      watch(document.querySelector('#ctaBlock .btn'));
-      // Each observer reports once on its own right away; until then the
-      // server-rendered "off" holds, so the button doesn't flash on load.
-      if (!visible.size) updateCta();
+      new IntersectionObserver(
+        (entries) => header.setAttribute('data-cta', entries[0].isIntersecting ? 'off' : 'on'),
+        { rootMargin: '-72px 0px 0px 0px' }
+      ).observe(heroCta);
     } else {
       header.setAttribute('data-cta', 'on');
     }
