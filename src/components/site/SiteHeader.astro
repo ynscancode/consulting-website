@@ -40,7 +40,7 @@ const links: { key: NavKey; href: string; label: string }[] = [
           </a>
         ))
       }
-      <a class="btn btn--act btn--sm nav-cta" href={siteLink(Astro.locals, '/contact')} {...ed(Astro.locals, 'header.cta')}>{c.header.cta}</a>
+      <span class="nav-cta-slot"><a class="btn btn--act btn--sm nav-cta" href={siteLink(Astro.locals, '/contact')} {...ed(Astro.locals, 'header.cta')}>{c.header.cta}</a></span>
     </nav>
   </div>
 </header>
@@ -102,6 +102,18 @@ const links: { key: NavKey; href: string; label: string }[] = [
      Every other page renders it "on" (or "none" on contact) and leaves it. */
   const heroCta = document.getElementById('heroCta');
   if (heroCta && header.getAttribute('data-cta') === 'off') {
+    // The slot animates between zero and the button's own width, so measure
+    // it (its layout width holds even while clipped and hidden),
+    // again once fonts settle and when the window resizes.
+    const cta = header.querySelector<HTMLElement>('.nav-cta')!;
+    const measure = () => {
+      header.style.setProperty('--cta-w', `${cta.getBoundingClientRect().width}px`);
+      header.toggleAttribute('data-cta-measured', true);
+    };
+    measure();
+    document.fonts?.ready.then(measure);
+    window.addEventListener('resize', measure);
+    cta.addEventListener('input', measure); // label edited in the editor
     if ('IntersectionObserver' in window) {
       // The hero's row sits right under the header at load, so don't count the header's own strip.
       new IntersectionObserver(
