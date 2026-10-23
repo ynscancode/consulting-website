@@ -8,7 +8,12 @@ const c = siteContent(L);
 const p = c.contactPage;
 
 const editing = isEditing(L);
-const c2 = { errors: p.errors, confirm: p.confirm, toastCopied: p.toastCopied, toastSelected: p.toastSelected };
+const c2 = { slotTimes: p.slotTimes, slotDays: p.slotDays, slotDate: p.slotDate, weekdays: p.weekdays, months: p.months, errors: p.errors, confirm: p.confirm, toastCopied: p.toastCopied, toastSelected: p.toastSelected };
+// In the editor the form is inert, and its submit button and wrapper become
+// plain elements with the same classes: iPad Safari shows no text cursor
+// while editing a <button class="btn"> inside a <form>.
+const FormTag = editing ? 'div' : 'form';
+const SubmitTag = editing ? 'span' : 'button';
 ---
 
 <section class="band band--forest band--tight on-dark">
@@ -21,7 +26,7 @@ const c2 = { errors: p.errors, confirm: p.confirm, toastCopied: p.toastCopied, t
 <section class="band band--paper on-light">
   <div class="wrap form-grid">
     <div id="formWrap">
-      <form id="consultForm" novalidate>
+      <FormTag id="consultForm" class="consult-form" novalidate={editing ? undefined : true}>
         <div class="field-row">
           <div class="field" id="f-name">
             <label for="name" {...ed(L, 'contactPage.nameLabel')} set:html={textHtml(p.nameLabel)} />
@@ -62,10 +67,10 @@ const c2 = { errors: p.errors, confirm: p.confirm, toastCopied: p.toastCopied, t
           <span class="err" hidden></span>
         </fieldset>
         <div class="btn-row">
-          <button class="btn btn--forest" type="submit" {...ed(L, 'contactPage.submit')} set:html={textHtml(p.submit)} />
+          <SubmitTag class="btn btn--forest" type={editing ? undefined : 'submit'} {...ed(L, 'contactPage.submit')} set:html={textHtml(p.submit)} />
           <span class="caption" style="color:var(--ink-muted)" {...ed(L, 'contactPage.submitNote')} set:html={textHtml(p.submitNote)} />
         </div>
-      </form>
+      </FormTag>
     </div>
     <aside class="aside">
       <div class="stack">
@@ -88,6 +93,45 @@ const c2 = { errors: p.errors, confirm: p.confirm, toastCopied: p.toastCopied, t
               <label>First choice: <span data-edit="contactPage.typeChoose" data-edit-kind="text">{p.typeChoose}</span></label>
               <label>Placeholder: <span data-edit="contactPage.contactPlaceholder" data-edit-kind="text">{p.contactPlaceholder}</span></label>
             </div>
+            <p class="edit-extra__title">Booking slots (dates are worked out each day)</p>
+            <div class="edit-extra__row">
+              <label>
+                Days offered{' '}
+                <select data-edit="contactPage.slotDays" data-edit-kind="select">
+                  {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+                    <option value={String(n)} selected={n === p.slotDays}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>Date format ({'{day}'}, {'{date}'} and {'{month}'} are filled in): <span data-edit="contactPage.slotDate" data-edit-kind="text">{p.slotDate}</span></label>
+            </div>
+            {[1, 2, 3, 4, 5, 6, 0].map((i) => (
+              <div class="edit-extra__row">
+                <label>Day name: <span data-edit={`contactPage.weekdays.${i}.name`} data-edit-kind="text">{p.weekdays[i].name}</span></label>
+                <label>
+                  <select data-edit={`contactPage.weekdays.${i}.open`} data-edit-kind="select">
+                    <option value="open" selected={p.weekdays[i].open === 'open'}>Open for calls</option>
+                    <option value="closed" selected={p.weekdays[i].open === 'closed'}>Closed (skipped)</option>
+                  </select>
+                </label>
+              </div>
+            ))}
+            <p class="edit-extra__note">Month names:</p>
+            <div class="edit-extra__row">
+              {p.months.map((m, i) => (
+                <span data-edit={`contactPage.months.${i}`} data-edit-kind="text">{m}</span>
+              ))}
+            </div>
+            <p class="edit-extra__note">Times, offered on each open day:</p>
+            <ul class="edit-extra__list" data-edit-list="contactPage.slotTimes">
+              {p.slotTimes.map((t, i) => (
+                <li data-edit-item={String(i)}>
+                  <span data-edit={`contactPage.slotTimes.${i}`} data-edit-kind="text">{t}</span>
+                </li>
+              ))}
+            </ul>
             <p class="edit-extra__note">Business types:</p>
             <ul class="edit-extra__list" data-edit-list="contactPage.businessTypes">
               {p.businessTypes.map((t, i) => (
@@ -160,10 +204,15 @@ const c2 = { errors: p.errors, confirm: p.confirm, toastCopied: p.toastCopied, t
 
 <script>
   import { receiptHTML, escapeHtml } from '../../../lib/receipt';
-  import { fill, richHtml } from '../../../lib/richText';
+  import { fill, richHtml, textHtml } from '../../../lib/richText';
   import { PREFILL_KEY } from '../../../lib/prefill';
 
   const msg = JSON.parse(document.getElementById('contactData')!.textContent!) as {
+    slotTimes: string[];
+    slotDays: number;
+    slotDate: string;
+    weekdays: { name: string; open: 'open' | 'closed' }[];
+    months: string[];
     errors: Record<'name' | 'biz' | 'type' | 'contact' | 'contactFormat' | 'problem' | 'slot', string>;
     confirm: Record<string, string>;
     toastCopied: string;
@@ -172,30 +221,61 @@ const c2 = { errors: p.errors, confirm: p.confirm, toastCopied: p.toastCopied, t
   const $ = <T extends Element = HTMLElement>(s: string, r: ParentNode = document) => r.querySelector<T>(s)!;
   const $$ = (s: string, r: ParentNode = document) => Array.from(r.querySelectorAll<HTMLElement>(s));
 
-  /* ---------- Booking slots: the next four days after today, Sundays skipped ---------- */
-  const TIMES = ['10:00 am', '3:00 pm', '8:00 pm'];
-  const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const slotList: { day: string; time: string }[] = [];
-  {
+  // The editor renders this page to edit its text: no interactivity there.
+  const editingPage = document.documentElement.hasAttribute('data-editing');
+
+  /* ---------- Booking slots: the next open days after today, each at every time ---------- */
+  let slotList: { day: string; time: string }[] = [];
+
+  // In the editor the day and month names, and each time, are fields (every
+  // copy edits the same one), in plain elements rather than <button>s, as for
+  // the submit button. The date itself is worked out, so it isn't a field.
+  function field(path: string, value: string): string {
+    return editingPage ? '<span data-edit="' + path + '" data-edit-kind="text">' + textHtml(value) + '</span>' : textHtml(value);
+  }
+
+  function slotsHTML(): string {
+    const anyOpen = msg.weekdays.some((w) => w.open === 'open');
+    const isOpen = (day: number) => !anyOpen || msg.weekdays[day].open === 'open';
     const d = new Date();
     d.setHours(12, 0, 0, 0);
-    let days = 0;
-    while (days < 4) {
+    slotList = [];
+    const labels: string[] = [];
+    for (let days = 0; days < msg.slotDays; ) {
       d.setDate(d.getDate() + 1);
-      if (d.getDay() === 0) continue;
-      const label = DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()];
-      TIMES.forEach((t) => slotList.push({ day: label, time: t }));
+      const day = d.getDay();
+      if (!isOpen(day)) continue;
+      const name = msg.weekdays[day].name;
+      const month = msg.months[d.getMonth()];
+      const date = String(d.getDate());
+      labels.push(
+        msg.slotDate
+          .split(/(\{day\}|\{date\}|\{month\})/)
+          .map((part) =>
+            part === '{day}'
+              ? field('contactPage.weekdays.' + day + '.name', name)
+              : part === '{month}'
+                ? field('contactPage.months.' + d.getMonth(), month)
+                : part === '{date}'
+                  ? date
+                  : textHtml(part)
+          )
+          .join('')
+      );
+      msg.slotTimes.forEach((time) => slotList.push({ day: fill(msg.slotDate, { day: name, date, month }), time }));
       days++;
     }
+    const n = msg.slotTimes.length;
+    return slotList
+      .map((s, i) => {
+        const label = '<strong>' + labels[Math.floor(i / n)] + '</strong>';
+        return editingPage
+          ? '<span class="slot">' + label + field('contactPage.slotTimes.' + (i % n), s.time) + '</span>'
+          : '<button type="button" class="slot" role="radio" aria-checked="false" data-i="' + i + '" tabindex="' +
+              (i === 0 ? 0 : -1) + '">' + label + textHtml(s.time) + '</button>';
+      })
+      .join('');
   }
-  const slotsHTML = slotList
-    .map(
-      (s, i) =>
-        '<button type="button" class="slot" role="radio" aria-checked="false" data-i="' + i + '" tabindex="' +
-        (i === 0 ? 0 : -1) + '"><strong>' + s.day + '</strong>' + s.time + '</button>'
-    )
-    .join('');
   let chosenSlot = -1;
 
   function pickSlot(i: number, focus?: boolean) {
@@ -294,7 +374,7 @@ const c2 = { errors: p.errors, confirm: p.confirm, toastCopied: p.toastCopied, t
   }
 
   function bindForm() {
-    $('#slots').innerHTML = slotsHTML;
+    $('#slots').innerHTML = slotsHTML();
     $('#consultForm').addEventListener('submit', handleSubmit);
     ['name', 'biz', 'type', 'contact', 'problem'].forEach((k) => {
       const el = document.getElementById(k)!;
@@ -318,9 +398,23 @@ const c2 = { errors: p.errors, confirm: p.confirm, toastCopied: p.toastCopied, t
       }
     });
   }
-  const editingPage = document.documentElement.hasAttribute('data-editing');
-  if (editingPage) $('#slots').innerHTML = slotsHTML;
-  else bindForm();
+  if (editingPage) {
+    $('#slots').innerHTML = slotsHTML();
+    // Redraw the slots when one of their settings is saved, undone or redone.
+    window.addEventListener('editor:value', (event) => {
+      const { path, value } = (event as CustomEvent<{ path: string; value: string }>).detail;
+      const m = path.match(/^contactPage\.(slotDays|slotDate|slotTimes|weekdays|months)\.?(.*)$/);
+      if (!m) return;
+      const [key, rest] = [m[1], m[2]];
+      if (key === 'slotDays') msg.slotDays = Number(value);
+      else if (key === 'slotDate') msg.slotDate = value;
+      else if (key === 'weekdays') {
+        const [i, prop] = rest.split('.');
+        (msg.weekdays[+i] as Record<string, string>)[prop] = value;
+      } else msg[key as 'slotTimes' | 'months'][+rest] = value;
+      $('#slots').innerHTML = slotsHTML();
+    });
+  } else bindForm();
 
   // Picks carried over from the home page's self-check.
   if (!editingPage) try {

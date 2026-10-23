@@ -151,6 +151,57 @@
     "problemHint": "Describe it how you'd tell a friend. Two or three sentences is plenty.",
     "slotLegend": "Pick a time for the video call",
     "slotHint": "Singapore time. We'll confirm by message.",
+    "slotTimes": [
+      "10:00 am",
+      "3:00 pm",
+      "8:00 pm"
+    ],
+    "slotDays": 4,
+    "slotDate": "{day} {date} {month}",
+    "weekdays": [
+      {
+        "name": "Sun",
+        "open": "closed"
+      },
+      {
+        "name": "Mon",
+        "open": "open"
+      },
+      {
+        "name": "Tue",
+        "open": "open"
+      },
+      {
+        "name": "Wed",
+        "open": "open"
+      },
+      {
+        "name": "Thu",
+        "open": "open"
+      },
+      {
+        "name": "Fri",
+        "open": "open"
+      },
+      {
+        "name": "Sat",
+        "open": "open"
+      }
+    ],
+    "months": [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec"
+    ],
     "submit": "Request my consult",
     "submitNote": "Free, and no obligation to hire us.",
     "messageLabel": "Rather message?",

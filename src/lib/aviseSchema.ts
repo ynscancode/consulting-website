@@ -155,6 +155,17 @@ export const aviseSchema = z.object({
     problemHint: text(300),
     slotLegend: text(120),
     slotHint: text(300),
+    // Times offered on each open day (the dates are worked out in the browser).
+    slotTimes: z.array(text(40)).min(1).max(8),
+    // How many open days ahead are offered, and how each date reads.
+    slotDays: z.coerce.number().int().min(1).max(10),
+    slotDate: text(60),
+    // Sunday first, as the browser counts weekdays.
+    weekdays: z
+      .array(z.object({ name: text(20), open: z.enum(['open', 'closed']) }))
+      .length(7)
+      .refine((days) => days.some((d) => d.open === 'open'), 'at least one day must be open'),
+    months: z.array(text(20)).length(12),
     submit: text(60),
     submitNote: text(200),
     messageLabel: text(120),
