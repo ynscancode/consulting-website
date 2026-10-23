@@ -346,6 +346,10 @@
       "a": "We quote a fixed fee after the free consult, once we know the scope. Rates are agreed per engagement."
     },
     {
+      "q": "A new question?",
+      "a": "The answer."
+    },
+    {
       "q": "How long does a project take?",
       "a": "Most run [two to six] weeks, depending on scope. We agree the timeline in the brief."
     },
