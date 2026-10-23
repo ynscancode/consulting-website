@@ -280,7 +280,7 @@ a { color: inherit; text-underline-offset: 3px; }
 /* Form */
 .form-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr); gap: var(--space-7); align-items: start; }
 @media (max-width: 900px) { .form-grid { grid-template-columns: minmax(0, 1fr); gap: var(--space-6); } }
-form { display: flex; flex-direction: column; gap: var(--space-4); }
+form, .consult-form { display: flex; flex-direction: column; gap: var(--space-4); }
 .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .field-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }
 @media (max-width: 600px) { .field-row { grid-template-columns: minmax(0, 1fr); } }

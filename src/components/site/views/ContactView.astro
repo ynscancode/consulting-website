@@ -8,7 +8,12 @@ const c = siteContent(L);
 const p = c.contactPage;
 
 const editing = isEditing(L);
-const c2 = { errors: p.errors, confirm: p.confirm, toastCopied: p.toastCopied, toastSelected: p.toastSelected };
+const c2 = { slotTimes: p.slotTimes, errors: p.errors, confirm: p.confirm, toastCopied: p.toastCopied, toastSelected: p.toastSelected };
+// In the editor the form is inert, and its submit button and wrapper become
+// plain elements with the same classes: iPad Safari shows no text cursor
+// while editing a <button class="btn"> inside a <form>.
+const FormTag = editing ? 'div' : 'form';
+const SubmitTag = editing ? 'span' : 'button';
 ---
 
 <section class="band band--forest band--tight on-dark">
@@ -21,7 +26,7 @@ const c2 = { errors: p.errors, confirm: p.confirm, toastCopied: p.toastCopied, t
 <section class="band band--paper on-light">
   <div class="wrap form-grid">
     <div id="formWrap">
-      <form id="consultForm" novalidate>
+      <FormTag id="consultForm" class="consult-form" novalidate={editing ? undefined : true}>
         <div class="field-row">
           <div class="field" id="f-name">
             <label for="name" {...ed(L, 'contactPage.nameLabel')} set:html={textHtml(p.nameLabel)} />
@@ -62,10 +67,10 @@ const c2 = { errors: p.errors, confirm: p.confirm, toastCopied: p.toastCopied, t
           <span class="err" hidden></span>
         </fieldset>
         <div class="btn-row">
-          <button class="btn btn--forest" type="submit" {...ed(L, 'contactPage.submit')} set:html={textHtml(p.submit)} />
+          <SubmitTag class="btn btn--forest" type={editing ? undefined : 'submit'} {...ed(L, 'contactPage.submit')} set:html={textHtml(p.submit)} />
           <span class="caption" style="color:var(--ink-muted)" {...ed(L, 'contactPage.submitNote')} set:html={textHtml(p.submitNote)} />
         </div>
-      </form>
+      </FormTag>
     </div>
     <aside class="aside">
       <div class="stack">
@@ -88,6 +93,14 @@ const c2 = { errors: p.errors, confirm: p.confirm, toastCopied: p.toastCopied, t
               <label>First choice: <span data-edit="contactPage.typeChoose" data-edit-kind="text">{p.typeChoose}</span></label>
               <label>Placeholder: <span data-edit="contactPage.contactPlaceholder" data-edit-kind="text">{p.contactPlaceholder}</span></label>
             </div>
+            <p class="edit-extra__note">Booking times, offered on each of the next four days (Sundays skipped):</p>
+            <ul class="edit-extra__list" data-edit-list="contactPage.slotTimes">
+              {p.slotTimes.map((t, i) => (
+                <li data-edit-item={String(i)}>
+                  <span data-edit={`contactPage.slotTimes.${i}`} data-edit-kind="text">{t}</span>
+                </li>
+              ))}
+            </ul>
             <p class="edit-extra__note">Business types:</p>
             <ul class="edit-extra__list" data-edit-list="contactPage.businessTypes">
               {p.businessTypes.map((t, i) => (
@@ -160,10 +173,11 @@ const c2 = { errors: p.errors, confirm: p.confirm, toastCopied: p.toastCopied, t
 
 <script>
   import { receiptHTML, escapeHtml } from '../../../lib/receipt';
-  import { fill, richHtml } from '../../../lib/richText';
+  import { fill, richHtml, textHtml } from '../../../lib/richText';
   import { PREFILL_KEY } from '../../../lib/prefill';
 
   const msg = JSON.parse(document.getElementById('contactData')!.textContent!) as {
+    slotTimes: string[];
     errors: Record<'name' | 'biz' | 'type' | 'contact' | 'contactFormat' | 'problem' | 'slot', string>;
     confirm: Record<string, string>;
     toastCopied: string;
@@ -172,8 +186,11 @@ const c2 = { errors: p.errors, confirm: p.confirm, toastCopied: p.toastCopied, t
   const $ = <T extends Element = HTMLElement>(s: string, r: ParentNode = document) => r.querySelector<T>(s)!;
   const $$ = (s: string, r: ParentNode = document) => Array.from(r.querySelectorAll<HTMLElement>(s));
 
+  // The editor renders this page to edit its text: no interactivity there.
+  const editingPage = document.documentElement.hasAttribute('data-editing');
+
   /* ---------- Booking slots: the next four days after today, Sundays skipped ---------- */
-  const TIMES = ['10:00 am', '3:00 pm', '8:00 pm'];
+  const TIMES = msg.slotTimes;
   const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const slotList: { day: string; time: string }[] = [];
@@ -189,11 +206,15 @@ const c2 = { errors: p.errors, confirm: p.confirm, toastCopied: p.toastCopied, t
       days++;
     }
   }
+  // In the editor each time is its own field (every day's copy edits the same
+  // time), in a plain element rather than a <button>, as for the submit button.
   const slotsHTML = slotList
-    .map(
-      (s, i) =>
-        '<button type="button" class="slot" role="radio" aria-checked="false" data-i="' + i + '" tabindex="' +
-        (i === 0 ? 0 : -1) + '"><strong>' + s.day + '</strong>' + s.time + '</button>'
+    .map((s, i) =>
+      editingPage
+        ? '<span class="slot"><strong>' + s.day + '</strong><span data-edit="contactPage.slotTimes.' +
+          (i % TIMES.length) + '" data-edit-kind="text">' + textHtml(s.time) + '</span></span>'
+        : '<button type="button" class="slot" role="radio" aria-checked="false" data-i="' + i + '" tabindex="' +
+          (i === 0 ? 0 : -1) + '"><strong>' + s.day + '</strong>' + textHtml(s.time) + '</button>'
     )
     .join('');
   let chosenSlot = -1;
@@ -318,7 +339,6 @@ const c2 = { errors: p.errors, confirm: p.confirm, toastCopied: p.toastCopied, t
       }
     });
   }
-  const editingPage = document.documentElement.hasAttribute('data-editing');
   if (editingPage) $('#slots').innerHTML = slotsHTML;
   else bindForm();
 

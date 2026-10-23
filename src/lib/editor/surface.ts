@@ -398,6 +398,8 @@ function newItemFor(listPath: string, list: unknown[], variant?: 'subheading'): 
       return { id: `symptom-${Date.now().toString(36)}`, label: 'A new symptom', fix: 'What we would look at', area: 'profit' };
     case 'lines':
       return { l: 'New line', v: '[x]' };
+    case 'slotTimes':
+      return '12:00 pm';
     case 'body':
       return variant === 'subheading' ? '## New subheading' : 'New paragraph.';
     case 'insights': {

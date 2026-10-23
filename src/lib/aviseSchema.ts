@@ -155,6 +155,8 @@ export const aviseSchema = z.object({
     problemHint: text(300),
     slotLegend: text(120),
     slotHint: text(300),
+    // Times offered on each of the next four days (the dates are worked out in the browser).
+    slotTimes: z.array(text(40)).min(1).max(8),
     submit: text(60),
     submitNote: text(200),
     messageLabel: text(120),
