@@ -33,7 +33,7 @@ img { max-width: 100%; }
   --shadow-paper-hero: 0 18px 40px rgba(0, 0, 0, 0.3);
   --shadow-card: 0 10px 24px rgba(26, 22, 18, 0.16);
   --stroke-rule: 1px; --stroke-receipt: 1.5px; --stroke-focus: 2px;
-  --web-max: 1120px;
+  --web-max: 1240px;
 }
 
 * { box-sizing: border-box; }
@@ -69,7 +69,7 @@ em.em { font-style: italic; }
 .on-dark em.em { color: var(--rose); }
 .on-light em.em { color: var(--forest); }
 .lede { font-size: 21px; line-height: 1.5; max-width: 34em; margin: 0; }
-.body-s { font-size: 16px; line-height: 1.6; }
+.body-s { font-size: 16px; line-height: 1.6; max-width: 38em; }
 .label { font-style: italic; font-size: 16px; line-height: 1.3; margin: 0; }
 .on-dark .label, .on-dark .muted { color: var(--paper-muted); }
 .on-light .label, .on-light .muted { color: var(--ink-muted); }
@@ -218,7 +218,7 @@ a { color: inherit; text-underline-offset: 3px; }
 .steps__num { width: 32px; flex: none; font-family: var(--font-display); font-style: italic; font-size: 34px; line-height: 1; color: var(--rose); }
 .steps__text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .steps__title { font-size: 20px; line-height: 1.3; font-weight: 600; }
-.steps__body { font-size: 17px; line-height: 1.5; color: var(--paper-muted); }
+.steps__body { font-size: 17px; line-height: 1.5; color: var(--paper-muted); max-width: 36em; }
 .steps__tag { font-style: italic; font-size: 15px; color: var(--citron); }
 
 /* Analysis cards */
